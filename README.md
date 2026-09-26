@@ -29,7 +29,7 @@ When automatic major-change notifications are enabled, Printy watches loaded pri
 
 ## Try the interface immediately
 
-Open `extension/demo.html`, or use **Open interactive demo** from the extension popup. The demo uses fictional printer data and the same matching/UI code. It is not a working SimplyPrint integration.
+Open `extension/demo.html`, or use **Open interactive demo** from the extension popup. The demo uses fictional printer data and the same matching/UI code. It is not a live 3DPrinterOS integration.
 
 1. Select PLA + Blue in Overview.
 2. Open Settings, expand Crane and mark it BROKEN locally.
@@ -89,7 +89,6 @@ The extension isolates the connection code from page content scripts. The helper
 ## Known prototype limits
 
 - Physical lights, ESP32 boards and BROKEN switches are not connected; the checkbox is a local simulation.
-- The second-manager demonstration is simulated, not an actual SimplyPrint adapter.
 - Printer settings are keyed by name. Recheck when renaming printers or switching accounts.
 - Recommendations cannot confirm that a bed is physically clear or that a device feed is live.
 - SSO remains in the user's normal browser. No login automation or admin API access is required.

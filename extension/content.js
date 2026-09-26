@@ -14,11 +14,109 @@
   const changeTracker=new PrintyChanges.Tracker();let nextAutoAt=0,autoBusy=false,toast=null;
   const detailCache=new Map(), logCache=new Map(), mounted=new Map(), settingsOpen=new Set();
   let saveQueue=Promise.resolve();
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  let assistantEl=null,transcriptEl=null,commandInput=null,micBtn=null,recognition=null,listening=false,activePopup=null;
+  const assistantLog=[];
   const host=document.createElement('div');host.id='farm-lights-panel';
   const shadow=host.attachShadow({mode:'open'});document.documentElement.append(host);
   const css=document.createElement('style');css.textContent=`
-  :host{all:initial;font:13px system-ui;color:#193d34;position:fixed;right:18px;top:90px;z-index:2147483000;width:350px;max-width:calc(100vw - 36px)}*{box-sizing:border-box}
-  .panel{background:#fbfdfb;border:1px solid #c1d3c8;border-radius:15px;box-shadow:0 12px 40px #17372c22;overflow:hidden}header{padding:14px 16px;background:#153f34;color:white;display:flex;align-items:center;justify-content:space-between}h2{margin:0;font-size:20px}h3{font-size:19px;margin:7px 0}h4{margin:12px 0 8px}p{line-height:1.5;margin:8px 0}button,select,input{font:inherit}button,select,input{border:1px solid #bbcec1;border-radius:7px;padding:7px;background:white;color:#214c3d}button{cursor:pointer}button:hover{background:#eaf3ed}button:disabled{opacity:.5;cursor:wait}.body{padding:15px;max-height:calc(100vh - 205px);overflow:auto}.tabs{display:flex;padding:7px;gap:6px;border-bottom:1px solid #dde8df}.tabs button{flex:1;border:0}.tabs button[aria-selected=true]{background:#dfede4;font-weight:700}.muted{font-size:11px;color:#63766a;line-height:1.5}.fields{display:flex;gap:8px;margin:12px 0}.fields label{flex:1}label{font-size:12px;display:block;margin:9px 0}label select{display:block;width:100%;margin-top:4px}.result{background:#e4f0e8;border-radius:10px;padding:13px;margin:14px 0}.item{padding:10px 0;border-top:1px solid #e0e8e1}.bad{color:#aa3333}.good{color:#24614a}.wide{width:100%;margin:6px 0}details{margin:8px 0}summary{cursor:pointer;font-weight:600}a{color:#196951}.pill{display:inline-block;font-size:11px;background:#e8eee9;border-radius:4px;padding:2px 5px;margin:3px}input[type=number]{width:65px;margin-left:8px}input[type=checkbox]{margin-right:6px}.row{display:flex;gap:7px;align-items:center}.swatch{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid #777;margin-right:4px}
+  :host{all:initial;
+    --bg:#f5f8f6;--panel:#ffffff;--ink:#12332b;--muted:#5f7268;--line:#e6ede9;
+    --brand:#12463a;--brand-2:#1f7d5a;--ai:#6d5efc;--ai-2:#22b8cf;--ai-soft:#efeaff;
+    --radius:16px;--shadow:0 18px 50px rgba(16,50,40,.18);
+    font:13.5px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,system-ui,sans-serif;
+    color:var(--ink);position:fixed;right:18px;top:88px;z-index:2147483000;width:366px;max-width:calc(100vw - 36px)}
+  *{box-sizing:border-box}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  header{padding:15px 17px;background:linear-gradient(135deg,#12463a 0%,#1b6250 55%,#1f7d74 100%);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative}
+  header::after{content:'';position:absolute;inset:0;background:radial-gradient(130px 70px at 88% -20%,rgba(109,94,252,.55),transparent 70%);pointer-events:none}
+  .brand{display:flex;align-items:center;gap:10px;position:relative;z-index:1;min-width:0}
+  .brand .spark{width:28px;height:28px;flex:0 0 28px;border-radius:9px;background:linear-gradient(135deg,var(--ai),var(--ai-2));display:grid;place-items:center;box-shadow:0 4px 14px rgba(109,94,252,.55);font-size:15px}
+  .brand .btxt{min-width:0}
+  h2{margin:0;font-size:18px;font-weight:700;letter-spacing:-.3px;line-height:1.1}
+  .brand .tag{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:#cfeee2;opacity:.85}
+  h3{font-size:17px;margin:8px 0;font-weight:650;letter-spacing:-.2px}
+  h4{margin:15px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700}
+  p{line-height:1.55;margin:8px 0}
+  button,select,input{font:inherit}
+  button,select,input{border:1px solid var(--line);border-radius:10px;padding:8px 11px;background:#fff;color:var(--ink);transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .1s ease}
+  button{cursor:pointer;font-weight:550}
+  button:hover{background:#eef4f0;border-color:#cfe0d7}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  input:focus,select:focus,button:focus-visible{outline:none;border-color:var(--ai);box-shadow:0 0 0 3px rgba(109,94,252,.18)}
+  header button{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28);color:#fff;padding:6px 12px;font-size:12px;position:relative;z-index:1}
+  header button:hover{background:rgba(255,255,255,.3)}
+  .body{padding:16px;max-height:calc(100vh - 320px);overflow:auto;scroll-behavior:smooth}
+  .tabs{display:flex;padding:8px;gap:6px;border-bottom:1px solid var(--line);background:#fbfdfc}
+  .tabs button{flex:1;border:0;background:transparent;border-radius:9px;padding:8px 5px;font-size:12.5px;color:var(--muted);font-weight:600}
+  .tabs button:hover{background:#eef4f0;color:var(--ink)}
+  .tabs button[aria-selected=true]{background:linear-gradient(135deg,rgba(109,94,252,.16),rgba(34,184,207,.16));color:var(--brand);font-weight:750;box-shadow:inset 0 0 0 1px rgba(109,94,252,.22)}
+  .muted{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .fields{display:flex;gap:9px;margin:12px 0}.fields label{flex:1}
+  label{font-size:12px;display:block;margin:9px 0;font-weight:550}
+  label select{display:block;width:100%;margin-top:5px}
+  .result{background:linear-gradient(160deg,#f3f8f5,#eaf3ee);border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0;box-shadow:0 3px 12px rgba(16,50,40,.05)}
+  .item{padding:11px 0;border-top:1px solid var(--line)}
+  .bad{color:#c0392b}.good{color:#1f7d5a}
+  .wide{width:100%;margin:8px 0}
+  details{margin:9px 0}summary{cursor:pointer;font-weight:600}
+  a{color:var(--brand-2);text-decoration:none;font-weight:600}a:hover{text-decoration:underline}
+  .pill{display:inline-block;font-size:11px;background:var(--ai-soft);color:#4b3fd0;border-radius:999px;padding:3px 9px;margin:3px 3px 3px 0}
+  input[type=number]{width:70px;margin-left:8px}
+  input[type=checkbox]{margin-right:7px;accent-color:var(--ai)}
+  .row{display:flex;gap:8px;align-items:center}
+  .swatch{width:11px;height:11px;border-radius:50%;display:inline-block;border:1px solid #9aa;margin-right:5px}
+  /* Assistant footer */
+  .assistant{border-top:1px solid var(--line);background:linear-gradient(180deg,#fbfcff,#f2f6fb);padding:12px 14px 13px}
+  .a-head{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .a-head .dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:linear-gradient(135deg,var(--ai),var(--ai-2));box-shadow:0 0 0 4px rgba(109,94,252,.14)}
+  .a-head .a-title{font-weight:750;font-size:12.5px;color:var(--brand)}
+  .a-head .a-sub{font-size:10.5px;color:var(--muted);margin-left:auto}
+  .transcript{max-height:134px;overflow:auto;display:flex;flex-direction:column;gap:7px;margin-bottom:10px;padding-right:2px}
+  .transcript:empty{display:none}
+  .msg{padding:8px 11px;border-radius:13px;font-size:12.5px;line-height:1.45;max-width:92%;white-space:pre-wrap;word-break:break-word}
+  .msg.user{align-self:flex-end;background:linear-gradient(135deg,#12463a,#1f7d5a);color:#fff;border-bottom-right-radius:4px}
+  .msg.bot{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px;box-shadow:0 2px 6px rgba(16,50,40,.05)}
+  .msg.bot.err{border-color:#f2c9c2;background:#fff4f2;color:#a23b2c}
+  .a-form{display:flex;gap:8px;align-items:center}
+  .a-form input[type=text]{flex:1;border-radius:12px;padding:10px 13px;min-width:0}
+  .mic{width:42px;height:42px;flex:0 0 42px;padding:0;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,var(--ai),var(--ai-2));border:0;color:#fff;box-shadow:0 5px 14px rgba(109,94,252,.42)}
+  .mic:hover{filter:brightness(1.06);background:linear-gradient(135deg,var(--ai),var(--ai-2))}
+  .mic:disabled{background:#c9d2cd;box-shadow:none;filter:none}
+  .mic.listening{animation:micpulse 1.15s infinite}
+  .mic svg{width:19px;height:19px}
+  .send{border-radius:12px;padding:10px 14px;font-weight:650}
+  @keyframes micpulse{0%{box-shadow:0 0 0 0 rgba(109,94,252,.55)}70%{box-shadow:0 0 0 11px rgba(109,94,252,0)}100%{box-shadow:0 0 0 0 rgba(109,94,252,0)}}
+  /* Modern print popup */
+  .printy-modal-overlay{position:fixed;inset:0;background:rgba(9,24,19,.52);backdrop-filter:blur(3px);display:grid;place-items:center;z-index:2147483600;opacity:0;transition:opacity .2s ease;padding:20px}
+  .printy-modal-overlay.open{opacity:1}
+  .printy-modal{width:408px;max-width:calc(100vw - 40px);max-height:calc(100vh - 60px);overflow:auto;background:var(--panel);border-radius:20px;box-shadow:0 30px 90px rgba(0,0,0,.4);transform:translateY(14px) scale(.98);transition:transform .22s ease;border:1px solid var(--line)}
+  .printy-modal-overlay.open .printy-modal{transform:none}
+  .m-head{padding:18px 20px;background:linear-gradient(135deg,#12463a,#1f7d74);color:#fff;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:relative;overflow:hidden}
+  .m-head::after{content:'';position:absolute;inset:0;background:radial-gradient(170px 90px at 92% -20%,rgba(109,94,252,.6),transparent 70%);pointer-events:none}
+  .m-head .mt{position:relative;z-index:1;min-width:0}
+  .m-head .eyebrow{font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;opacity:.85;color:#d6f2e7}
+  .m-head h3{margin:3px 0 0;font-size:21px;color:#fff;letter-spacing:-.3px}
+  .m-head .m-state{font-size:12px;opacity:.92;margin-top:4px;text-transform:capitalize}
+  .m-close{position:relative;z-index:1;background:rgba(255,255,255,.18);border:0;color:#fff;width:32px;height:32px;flex:0 0 32px;border-radius:10px;font-size:17px;line-height:1}
+  .m-close:hover{background:rgba(255,255,255,.32)}
+  .m-body{padding:18px 20px}
+  .m-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .m-row .k{color:var(--muted);font-size:12px}
+  .m-row .v{font-weight:650;text-align:right}
+  .m-wait{margin:15px 0;padding:15px;border-radius:15px;background:linear-gradient(160deg,var(--ai-soft),#eafaf3);border:1px solid #e4e0ff}
+  .m-wait .lbl{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:#5a51c9;font-weight:700}
+  .m-wait .big{font-size:27px;font-weight:750;letter-spacing:-.5px;margin-top:2px}
+  .m-wait .sub{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.45}
+  .sim-note{margin:14px 0;padding:11px 13px;border-radius:12px;background:#fff8ec;border:1px solid #f3e2bf;color:#8a5a12;font-size:12px;line-height:1.5}
+  .m-actions{display:flex;flex-direction:column;gap:11px;margin-top:8px}
+  .bed{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;background:#f4f7f5;padding:11px 12px;border-radius:12px;border:1px solid var(--line)}
+  .m-start{background:linear-gradient(135deg,var(--ai),var(--ai-2));color:#fff;border:0;padding:13px;border-radius:14px;font-weight:750;font-size:14px;box-shadow:0 8px 22px rgba(109,94,252,.36)}
+  .m-start:hover:not(:disabled){filter:brightness(1.05);background:linear-gradient(135deg,var(--ai),var(--ai-2))}
+  .m-start:disabled{background:#c9d2cd;box-shadow:none;color:#fff}
+  .m-done{margin-top:4px;padding:12px 13px;border-radius:12px;background:#eef9f1;border:1px solid #cdeed6;color:#1f7d5a;font-size:12.5px;line-height:1.5}
+  .badge{display:inline-block;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:700}
   `;shadow.append(css);
   const panel=document.createElement('section');panel.className='panel';shadow.append(panel);
   const openSections=new Set();let savedScroll={overview:0,next:0,updates:0,settings:0},renderedView='overview',pendingRender=false;
@@ -105,9 +203,11 @@
     const previousBody=panel.querySelector('.body');if(previousBody)savedScroll[renderedView]=previousBody.scrollTop;
     panel.querySelectorAll('details[data-section]').forEach(d=>{if(d.open)openSections.add(d.dataset.section);else openSections.delete(d.dataset.section);});
     renderedView=view;
-    panel.replaceChildren();const header=el('header');header.append(el('h2',demo?'Printy · Demo':'Printy'),button(collapsed?'Open':'Minimize',()=>{collapsed=!collapsed;render();}));panel.append(header);if(collapsed)return;
+    panel.replaceChildren();const header=el('header');
+    const brand=el('div',undefined,'brand');const spark=el('div','✦','spark');spark.setAttribute('aria-hidden','true');const btxt=el('div',undefined,'btxt');btxt.append(el('h2',demo?'Printy · Demo':'Printy'),el('div','AI companion','tag'));brand.append(spark,btxt);
+    header.append(brand,button(collapsed?'Open':'Minimize',()=>{collapsed=!collapsed;render();}));panel.append(header);if(collapsed)return;
     const tabs=el('nav',undefined,'tabs');tabs.setAttribute('role','tablist');Object.entries({overview:'Start print',next:'Next steps',updates:'Updates',settings:'Settings'}).forEach(([v,label])=>{const b=button(label,()=>{view=v;render();});b.setAttribute('role','tab');b.setAttribute('aria-selected',String(view===v));tabs.append(b);});panel.append(tabs);
-    const body=el('div',undefined,'body');panel.append(body);
+    const body=el('div',undefined,'body');panel.append(body);panel.append(buildAssistant());
     if(view==='settings'){renderSettings(body);body.scrollTop=savedScroll[view];return;}
     if(view==='overview'){renderStart(body);body.scrollTop=savedScroll[view];return;}
     if(view==='updates'){renderUpdates(body);body.scrollTop=savedScroll[view];return;}
@@ -148,7 +248,7 @@
     const value=el('div',next?next.minutes===0?'Ready now':`~${next.minutes} min`:'Unknown');value.style.cssText='font-size:36px;font-weight:750;letter-spacing:-1px;margin:4px 0';box.append(value);
     if(next){const r=next.row;box.append(el('h3',r.name),el('p',next.minutes===0?'Confirm the bed is clear before starting.':`Earliest reported finish for a matching printer, including ${settings.collectionMinutes} min for collection.`,'muted'));
       if(unknown&&next.minutes>0)box.append(el('p','Some matching printers have no estimate and could become available earlier.','muted'));
-      box.append(button('Show printer',()=>{const card=(!demo&&PrintyGrid.elementFor(r.id))||r.card;card.scrollIntoView({behavior:'smooth',block:'center'});card.animate([{outline:'3px solid #38a873'},{outline:'3px solid transparent'}],{duration:1500});}));
+      const acts=el('div',undefined,'row');acts.style.marginTop='10px';acts.append(button('Show printer',()=>highlightCard(r)),button('Start print',()=>{highlightCard(r);openPrintPopup(r,{mat:material,col:color});}));box.append(acts);
     }else box.append(el('p',rows.length?'No matching printer has a reliable start estimate.':'Open the Printers page to read availability.'));
     body.append(box,el('p',`${rows.length} printers read · ${rows.filter(r=>broken(r)||['error','offline'].includes(r.state)).length} down · ${rows.filter(r=>r.state==='paused'&&!broken(r)).length} paused`,'muted'));
     const urgent=FarmLightsLogic.priorities(rows).filter(task=>task.rank>=40),section=el('section');section.setAttribute('aria-label','Urgent actions');section.append(el('h4','Urgent actions'));
@@ -273,6 +373,138 @@
       finally{collecting=false;PrintyLogReader.dispose();render();}
     })();
     try{await collectionTask;}finally{collectionTask=null;changed();}
+  }
+  /* ---- Assistant: shared voice + text command parser reusing logic.js rules ---- */
+  function escapeRegex(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+  function parseFilament(text){
+    const t=' '+text.toLowerCase()+' ';let mat='',col='';
+    for(const m of materials)if(m!=='Other'&&new RegExp('\\b'+escapeRegex(m.toLowerCase())+'\\b').test(t))mat=m;
+    for(const c of colors)if(c!=='Other'&&new RegExp('\\b'+escapeRegex(c.toLowerCase())+'\\b').test(t))col=c;
+    if(!col&&/\bgrey\b/.test(t))col='Gray';
+    return {mat,col};
+  }
+  function parseName(text){
+    const t=' '+text.toLowerCase()+' ';
+    return rows.find(r=>r.name&&new RegExp('\\b'+escapeRegex(r.name.toLowerCase())+'\\b').test(t))||null;
+  }
+  function pickByFilament(mat,col){
+    const {next}=FarmLightsLogic.nextPrinter(rows,mat,col,settings.collectionMinutes);
+    if(next)return next.row;
+    const rec=FarmLightsLogic.recommend(rows,mat,col,broken);
+    if(rec.length)return rec[0];
+    const any=rows.filter(r=>!r.ambiguous&&!broken(r)&&FarmLightsLogic.matchesFilament(r,mat,col)).sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+    return any[0]||null;
+  }
+  function cardFor(row){return (!demo&&globalThis.PrintyGrid&&PrintyGrid.elementFor(row.id))||row.card||null;}
+  function highlightCard(row){
+    const card=cardFor(row);if(!card)return;
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+    try{card.animate([
+      {boxShadow:'0 0 0 0 rgba(109,94,252,0)',offset:0},
+      {boxShadow:'0 0 0 6px rgba(109,94,252,.5)',offset:.5},
+      {boxShadow:'0 0 0 0 rgba(109,94,252,0)',offset:1}
+    ],{duration:1200,iterations:2,easing:'ease-out'});}catch{}
+  }
+  function assistantSay(text,kind){assistantLog.push({text,kind:kind||'bot'});if(assistantLog.length>40)assistantLog.shift();renderTranscript();}
+  function renderTranscript(){
+    if(!transcriptEl)return;transcriptEl.replaceChildren();
+    assistantLog.forEach(m=>transcriptEl.append(el('div',m.text,'msg '+(m.kind==='err'?'bot err':m.kind==='user'?'user':'bot'))));
+    transcriptEl.scrollTop=transcriptEl.scrollHeight;
+  }
+  function handleCommand(raw){
+    const text=(raw||'').trim();if(!text)return;
+    assistantSay(text,'user');
+    if(!rows.length){assistantSay('No printers are loaded yet — open the Printers dashboard, then try again.','err');return;}
+    const nameHit=parseName(text);
+    const {mat,col}=parseFilament(text);
+    if(nameHit){assistantSay(`Showing ${nameHit.name}.`,'bot');highlightCard(nameHit);openPrintPopup(nameHit,{});return;}
+    if(mat||col){
+      if(mat)material=mat;if(col)color=col;
+      const label=[mat,col].filter(Boolean).join(' ')||'that filament';
+      const row=pickByFilament(mat,col);
+      changed();
+      if(!row){assistantSay(`I couldn't find a printer loaded with ${label}. Try different filament, or set a fallback in Settings.`,'err');return;}
+      const est=FarmLightsLogic.waitEstimate(row,settings.collectionMinutes);
+      assistantSay(`Best match for ${label}: ${row.name} — ${est.label}. Opening the print popup.`,'bot');
+      highlightCard(row);openPrintPopup(row,{mat,col});
+      return;
+    }
+    assistantSay('I can find a printer by filament (e.g. \u201Cfind a PLA blue printer\u201D) or by name (e.g. \u201Cshow me Remy\u201D).','bot');
+  }
+  function micIcon(){
+    const ns='http://www.w3.org/2000/svg';const svg=document.createElementNS(ns,'svg');
+    for(const [k,v] of Object.entries({viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true'}))svg.setAttribute(k,v);
+    const mk=(tag,attrs)=>{const n=document.createElementNS(ns,tag);for(const k in attrs)n.setAttribute(k,attrs[k]);return n;};
+    svg.append(mk('rect',{x:9,y:2,width:6,height:12,rx:3}),mk('path',{d:'M5 10v1a7 7 0 0 0 14 0v-1'}),mk('line',{x1:12,y1:19,x2:12,y2:22}),mk('line',{x1:8,y1:22,x2:16,y2:22}));
+    return svg;
+  }
+  function toggleListening(){
+    if(!SpeechRecognition){assistantSay('Voice input is not available in this browser. Type a command instead.','err');return;}
+    if(listening){try{recognition&&recognition.stop();}catch{}return;}
+    try{
+      recognition=new SpeechRecognition();recognition.lang='en-US';recognition.interimResults=false;recognition.maxAlternatives=1;
+      recognition.onstart=()=>{listening=true;micBtn&&micBtn.classList.add('listening');assistantSay('Listening\u2026 say a command like \u201Cfind a PLA blue printer\u201D.','bot');};
+      recognition.onresult=e=>{const said=e.results?.[0]?.[0]?.transcript||'';if(commandInput)commandInput.value=said;if(said.trim())handleCommand(said);};
+      recognition.onerror=e=>{const err=e?.error;const msg=err==='not-allowed'||err==='service-not-allowed'?'Microphone permission was blocked. Use the text box instead.':err==='no-speech'?'I didn\u2019t catch that \u2014 try again or type your command.':'Voice input error ('+(err||'unknown')+'). Type your command instead.';assistantSay(msg,'err');};
+      recognition.onend=()=>{listening=false;micBtn&&micBtn.classList.remove('listening');};
+      recognition.start();
+    }catch(err){listening=false;micBtn&&micBtn.classList.remove('listening');assistantSay('Could not start voice input. Type your command instead.','err');}
+  }
+  function buildAssistant(){
+    if(assistantEl)return assistantEl;
+    const wrap=el('div',undefined,'assistant');
+    const head=el('div',undefined,'a-head');
+    head.append(el('span',undefined,'dot'),el('span','Assistant','a-title'),el('span',SpeechRecognition?'voice + text':'text mode','a-sub'));
+    transcriptEl=el('div',undefined,'transcript');transcriptEl.setAttribute('role','log');transcriptEl.setAttribute('aria-live','polite');
+    const form=el('form',undefined,'a-form');form.setAttribute('role','search');
+    commandInput=el('input');commandInput.type='text';commandInput.placeholder='Ask: \u201Cfind a PLA blue printer\u201D';commandInput.setAttribute('aria-label','Assistant command');
+    micBtn=el('button');micBtn.type='button';micBtn.className='mic';const micLabel=SpeechRecognition?'Speak a command':'Voice input unavailable \u2014 type instead';micBtn.setAttribute('aria-label',micLabel);micBtn.title=micLabel;micBtn.append(micIcon());
+    if(!SpeechRecognition)micBtn.disabled=true;else micBtn.onclick=toggleListening;
+    const send=el('button','Send','send');send.type='submit';
+    form.append(commandInput,micBtn,send);
+    form.addEventListener('submit',e=>{e.preventDefault();const v=commandInput.value;commandInput.value='';handleCommand(v);});
+    wrap.append(head,transcriptEl,form);
+    assistantEl=wrap;renderTranscript();
+    return assistantEl;
+  }
+  /* ---- Modern print popup (redesigned start-print modal, advisory only) ---- */
+  function closePopup(){if(activePopup){const o=activePopup;activePopup=null;o.classList.remove('open');setTimeout(()=>o.remove(),200);}}
+  function matchedSlotText(row,mat,col){
+    if(row.slotsKnown){
+      const slot=row.slots.find(s=>(!mat||FarmLightsLogic.materialFamily(s.material)===FarmLightsLogic.materialFamily(mat))&&(!col||s.color===col))||row.slots[0];
+      if(!slot)return 'No loaded filament reported';
+      return `Slot ${slot.slot}: ${slot.material}${slot.color?' \u00b7 '+slot.color:''}`;
+    }
+    return [row.config.material,row.config.color].filter(Boolean).join(' \u00b7 ')||'Filament not read yet';
+  }
+  function openPrintPopup(row,opts={}){
+    closePopup();
+    const overlay=el('div',undefined,'printy-modal-overlay');overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label',`Start print — ${row.name}`);
+    const modal=el('div',undefined,'printy-modal');
+    const head=el('div',undefined,'m-head');const mt=el('div',undefined,'mt');
+    mt.append(el('div','Start print \u00b7 simulated','eyebrow'),el('h3',row.name),el('div',`Status: ${row.state}`,'m-state'));
+    const close=el('button','\u2715','m-close');close.type='button';close.setAttribute('aria-label','Close');close.onclick=closePopup;
+    head.append(mt,close);
+    const bodyM=el('div',undefined,'m-body');
+    const assessment=FarmLightsLogic.triage(row);
+    const stateRow=el('div',undefined,'m-row');const badge=el('span',assessment.label,'badge');badge.style.color=tones[assessment.kind];badge.style.background=tones[assessment.kind]+'1e';stateRow.append(el('span','Assessment','k'),badge);bodyM.append(stateRow);
+    const slotRow=el('div',undefined,'m-row');slotRow.append(el('span','Matched filament','k'),el('span',matchedSlotText(row,opts.mat,opts.col),'v'));bodyM.append(slotRow);
+    const est=FarmLightsLogic.waitEstimate(row,settings.collectionMinutes);
+    const wait=el('div',undefined,'m-wait');wait.append(el('div','Wait to start','lbl'),el('div',est.minutes===0?'Ready now':est.minutes!=null?`~${est.minutes} min`:'Unknown','big'),el('div',est.note||est.label,'sub'));
+    bodyM.append(wait);
+    bodyM.append(el('div','Simulated action only. Printy is advisory and never controls hardware or starts/resumes a print. Start the job in 3DPrinterOS after confirming the printer is ready.','sim-note'));
+    const actions=el('div',undefined,'m-actions');
+    const bed=el('label',undefined,'bed');const bedChk=el('input');bedChk.type='checkbox';bed.append(bedChk,document.createTextNode('I confirm the print bed is clear and the printer is ready.'));
+    const start=el('button','Simulate start print','m-start');start.type='button';start.disabled=true;
+    bedChk.onchange=()=>{start.disabled=!bedChk.checked;};
+    start.onclick=()=>{actions.replaceChildren(el('div',`Simulated: a print for ${row.name} would be queued here. No command was sent \u2014 start it in 3DPrinterOS.`,'m-done'));assistantSay(`Simulated start for ${row.name} (advisory only \u2014 no hardware was controlled).`,'bot');};
+    actions.append(bed,start);bodyM.append(actions);
+    modal.append(head,bodyM);overlay.append(modal);
+    overlay.addEventListener('click',e=>{if(e.target===overlay)closePopup();});
+    overlay.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup();});
+    shadow.append(overlay);activePopup=overlay;
+    requestAnimationFrame(()=>overlay.classList.add('open'));
+    setTimeout(()=>{try{close.focus();}catch{}},30);
   }
   (async()=>{try{const stored=globalThis.chrome?.runtime?.id?(await chrome.runtime.sendMessage({type:'get-settings',key})).value:JSON.parse(localStorage.getItem(key)||'null');if(stored?.printers)settings={...settings,...stored};}catch{}scan();setInterval(scan,1500);window.addEventListener('hashchange',changed);})();
 })();

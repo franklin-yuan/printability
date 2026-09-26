@@ -40,4 +40,4 @@ The helper whitelists/limits snapshot fields and requests strict JSON output fro
 
 ## Pending
 
-Physical switch transport, ESP32 output, multi-account identity namespaces, cross-browser-tab synchronization, server-backed manager adapters, and calibrated completion/collection prediction remain future work. Local operator overrides are clearly identified as such. The simulated alternate provider remains labeled simulated.
+Physical switch transport, ESP32 output, multi-account identity namespaces, cross-browser-tab synchronization, and calibrated completion/collection prediction remain future work. Local operator overrides are clearly identified as such.
