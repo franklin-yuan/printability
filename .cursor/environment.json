@@ -1,6 +1,5 @@
 {
   "name": "Printy — 3DPrinterOS Companion",
-  "install": "sudo apt-get update && sudo apt-get install -y python3-tk",
   "terminals": [
     {
       "name": "demo-server",
