@@ -1,0 +1,15 @@
+{
+  "name": "Printy — 3DPrinterOS Companion",
+  "install": "sudo apt-get update && sudo apt-get install -y python3-tk",
+  "terminals": [
+    {
+      "name": "demo-server",
+      "command": "python3 -m http.server 8000 --directory extension",
+      "description": "Serves the extension/ folder so the standalone companion UI is available at http://localhost:8000/demo.html"
+    }
+  ],
+  "ports": [
+    { "name": "demo", "port": 8000 },
+    { "name": "printy-helper", "port": 8765 }
+  ]
+}
