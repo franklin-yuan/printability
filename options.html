@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Printy · connection</title>
+<style>body{max-width:620px;margin:60px auto;padding:25px;font:16px system-ui;color:#193f32;background:#f4f8f5}h1{letter-spacing:-1px}p,li{line-height:1.7}label{display:block;margin:20px 0}input{display:block;box-sizing:border-box;width:100%;padding:12px;margin:8px 0;border:1px solid #bccfc2;border-radius:7px}button{padding:12px;border:0;border-radius:7px;background:#1b654b;color:white;cursor:pointer}code{user-select:all}#status{white-space:pre-wrap}</style>
+<h1>Printy connection</h1><p>This page only connects the local helper for USB lights and Grok voice. Printer assignments and light setup are in the Printy panel’s <b>Settings</b> tab on the 3DPrinterOS Printers page.</p>
+<ol><li>Double-click <b>Start Printy.vbs</b> in the Printy helper folder.</li><li>Set the helper’s extension ID to <code id="extension-id"></code> and save. Add your xAI API key for Grok voice.</li><li>Copy the helper’s connection code below.</li><li>For lights, connect the S3 USB port in the helper, then enable hardware in Printy Settings.</li></ol>
+<label>Connection code <input id="token" type="password" autocomplete="off" spellcheck="false"></label>
+<button id="save">Save and test connection</button><p id="status" role="status"></p>
+<p>Lights and local notifications are free of API calls. Grok voice uses your xAI API account while connected. Start voice explicitly and stop it when finished. OpenAI is no longer used.</p>
+<script src="options.js"></script></html>

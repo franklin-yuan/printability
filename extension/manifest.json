@@ -1,14 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "Printy \u2014 3DPrinterOS Companion",
-  "version": "0.8.1",
-  "description": "Printer recommendations, AMS matching, job-log evidence and optional OpenAI suggestions.",
+  "name": "Printability \u2014 3DPrinterOS Companion",
+  "version": "0.12.0",
+  "description": "Printer finder, physical status lights and Printability Voice studio mentor.",
   "permissions": [
     "storage",
-    "notifications"
+    "notifications",
+    "sidePanel"
   ],
   "host_permissions": [
-    "http://127.0.0.1/*"
+    "http://127.0.0.1/*",
+    "https://cloud.3dprinteros.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -16,7 +18,7 @@
   "options_page": "options.html",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Farm Lights"
+    "default_title": "Printability"
   },
   "content_scripts": [
     {
@@ -33,6 +35,22 @@
         "content.js"
       ],
       "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "voice.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://127.0.0.1:8765 wss://api.x.ai"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "voice.html"
+      ],
+      "matches": [
+        "https://cloud.3dprinteros.com/*"
+      ]
     }
   ]
 }

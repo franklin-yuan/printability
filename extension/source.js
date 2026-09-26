@@ -3,6 +3,15 @@
 globalThis.PrintySource = (() => {
   const text=n=>(n?.textContent||'').trim();
   const dates=new Map();
+  function requirements(value){
+    // Only explicit sliced-file labels. Never infer requirements from filenames or AMS contents.
+    const text=String(value||'');
+    const material=text.match(/(?:^|\n)\s*(?:Filament type|Material|Sliced material)\s*:\s*([A-Za-z0-9 +_-]+)(?=\n|$)/im)?.[1]?.trim()||'';
+    const profile=text.match(/(?:^|\n)\s*(?:Printer profile|Sliced printer)\s*:\s*([^\n]+)/im)?.[1]?.trim()||'';
+    const nozzle=text.match(/(?:^|\n)\s*(?:Nozzle diameter|Sliced nozzle)\s*:\s*(\d+(?:\.\d+)?)\s*mm/im)?.[1]||'';
+    const plate=text.match(/(?:^|\n)\s*(?:Plate type|Build plate)\s*:\s*([^\n]+)/im)?.[1]?.trim()||'';
+    return {material,profile,nozzle,plate,source:'Explicit file metadata labels'};
+  }
   function slots(root) {
     const parent=root.querySelector('.filament-properties-parent');
     if(!parent)return {slotsKnown:false,slots:[]};
@@ -36,7 +45,7 @@ globalThis.PrintySource = (() => {
           dateLabel:text(date),dateTitle:date?.getAttribute('title')||'',estimatedMinutes:duration(text(tr.querySelector('.print-time'))),source:'printers-page',current:!!tr.closest('.collapse-jobs--in-progress'),element:tr};
       });
       return {id:card.id.replace('printer-item-',''),name,model,raw:badge(card),card,jobs,...slots(card)};
-    }).filter(r=>r.name&&!/virtual|industrial/i.test(r.model+' '+r.raw));
+    }).filter(r=>r.name&&!/virtual|industrial|print queue/i.test(r.model+' '+r.raw+' '+r.name+' '+r.card.querySelector('.printer-badge')?.className));
   }
   function duration(value){const m=String(value).match(/(\d+):(\d{2})h/);return m&&Number(m[2])<60?Number(m[1])*60+Number(m[2]):null;}
   function logJob(row){
@@ -48,5 +57,5 @@ globalThis.PrintySource = (() => {
       return Number.isFinite(ad)&&Number.isFinite(bd)?bd-ad:Number(b.id)-Number(a.id);
     })[0]||null;
   }
-  return {slots,badge,printers,duration,logJob};
+  return {slots,badge,printers,duration,logJob,requirements};
 })();

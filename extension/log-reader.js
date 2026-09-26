@@ -50,7 +50,7 @@ globalThis.PrintyLogReader = (()=>{
   function dispose(){frame?.remove();frame=null;}
   async function backgroundDocument(cancelled=()=>false){
     dispose();
-    frame=document.createElement('iframe');frame.id='printy-background-reader';frame.title='Printy background log reader';
+    frame=document.createElement('iframe');frame.id='printy-background-reader';frame.title='Printability background log reader';
     frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');frame.setAttribute('inert','');
     frame.setAttribute('sandbox','allow-scripts allow-same-origin');
     frame.style.cssText='position:fixed!important;left:-20000px!important;top:0!important;width:1280px!important;height:900px!important;opacity:0!important;pointer-events:none!important;border:0!important;';

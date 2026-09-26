@@ -1,4 +1,12 @@
-# Printy — quick start (v0.8.1)
+# Printability — quick start (v0.9.0)
+
+## Wireless lights and physical switches
+
+Version 0.9 adds the USB helper bridge for an ESP32-S3 N16R8 gateway and six XIAO ESP32-C3 modules using ESP-NOW. Firmware and the full wiring/upload guide are in `firmware/README.md` in the full package. Install the firmware before enabling hardware in Settings. Restart the helper and reload/refresh the extension. Connect the S3 COM port in the helper, pair the connection code, enable six modules, and assign their IDs to printers. The API key is optional; hardware makes no paid requests.
+
+Current wiring: the S3 drives six daisy-chained eight-pixel sticks (48 LEDs) from GPIO4. Each C3 reads only its D4/GPIO6 switch. Module IDs 1–6 correspond to sticks 1–6 in chain order. The S3 handles physical red overrides without the computer, provided the switch radio link and LED power are working.
+
+Physical BROKEN overrides affect recommendations and the WS2812. A missing module makes its assigned printer's availability unknown. The demo never controls hardware. Hardware is off by default until you enable it. USB support is bundled in the helper's vendor folder.
 
 The default Start print screen shows filament filters, one large next-printer wait, and the top two urgent actions together. All next steps opens the complete action list and AI details. Updates remains separate. Reload the extension and refresh the dashboard after updating.
 
@@ -21,11 +29,11 @@ Printer cards have bounded image previews and a printer illustration when no act
 
 Each printer shows three files per page, current/recent first, with search over all its files and Previous/Next controls. Estimated wait uses reported remaining print time plus a configurable collection buffer (five minutes by default). Idle printers require bed-clearance confirmation. Paused, broken, disconnected or missing-time states have unknown waits. Stored files never add queue delay.
 
-To apply this update, reload the extension, refresh 3DPrinterOS, and close/reopen the Printy helper so it loads the new AI instructions. Browser fixtures and mocked AI tests verify these changes; no paid AI request was made.
+To apply this update, reload the extension, refresh 3DPrinterOS, and close/reopen the Printability helper so it loads the new AI instructions. Browser fixtures and mocked AI tests verify these changes; no paid AI request was made.
 
-Printy adds a compact companion to 3DPrinterOS. Overview contains printer matching and AI next steps; Settings holds light assignments, manual BROKEN overrides, fallback filament settings, automatic notification controls and the AI connection link.
+Printability adds a compact companion to 3DPrinterOS. Overview contains printer matching and AI next steps; Settings holds light assignments, manual BROKEN overrides, fallback filament settings, automatic notification controls and the AI connection link.
 
-When automatic major-change notifications are enabled, Printy watches loaded printer statuses and shows a pop-up for meaningful events such as a pause, error, disconnect, completion, a printer becoming idle, or a BROKEN override. It batches changes for 15 seconds and ignores normal percentage ticks and heating/printing chatter. Notifications are spaced five minutes apart across tabs. They use local rules unless automatic paid AI is explicitly enabled; the stricter six-call/30-minute AI limits still apply. Connecting a helper alone does not enable automatic billing.
+When automatic major-change notifications are enabled, Printability watches loaded printer statuses and shows a pop-up for meaningful events such as a pause, error, disconnect, completion, a printer becoming idle, or a BROKEN override. It batches changes for 15 seconds and ignores normal percentage ticks and heating/printing chatter. Notifications are spaced five minutes apart across tabs. They use local rules unless automatic paid AI is explicitly enabled; the stricter six-call/30-minute AI limits still apply. Connecting a helper alone does not enable automatic billing.
 
 ## Try the interface immediately
 
@@ -41,8 +49,8 @@ The standalone file demo has no AI connection. Open the demo from the installed 
 ## Update the existing extension
 
 1. Open Chrome's Extensions page (`chrome://extensions`).
-2. Find **Printy / Farm Lights** and click its reload button. For a fresh installation, enable Developer mode, choose Load unpacked and select the `extension` folder.
-3. Refresh your existing 3DPrinterOS browser tab. The new panel says **Printy** and has **Overview / Settings** tabs.
+2. Find **Printability / Farm Lights** and click its reload button. For a fresh installation, enable Developer mode, choose Load unpacked and select the `extension` folder.
+3. Refresh your existing 3DPrinterOS browser tab. The new panel says **Printability** and has **Overview / Settings** tabs.
 4. **Open Printers dashboard** is the main entry point, now arranged as printer cards. Each card has searchable Files, Job details and Manage files, which exposes the original file controls. Live View Wall remains optional. Automatic log collection uses an isolated off-screen page and never navigates your visible tab or opens its dialogs.
 
 Status updates preserve panel scroll position, expanded sections and file searches. Updates to the companion panel wait while you use an input or dropdown. This update does not require restarting the helper.
@@ -51,11 +59,11 @@ The extension needs loopback access (`http://127.0.0.1`) to reach the local AI h
 
 ## Turn on real OpenAI suggestions — no terminal required
 
-1. Double-click `helper/Start Printy.vbs`. Python 3.12 is already installed on this machine at the launcher's configured path. No extra Python packages are required.
-2. In Printy's **Settings**, choose **Open AI connection settings**. Copy the displayed extension ID into the helper.
+1. Double-click `helper/Start Printability.vbs`. Python 3.12 is already installed on this machine at the launcher's configured path. No extra Python packages are required.
+2. In Printability's **Settings**, choose **Open AI connection settings**. Copy the displayed extension ID into the helper.
 3. Enter your OpenAI API key in the **helper window**, then click Save connection. Do not paste the API key into chat or the extension. The model defaults to `gpt-4.1-mini` and can be changed in the helper.
 4. Click Copy connection code in the helper; paste that code into the extension connection page and click Save and test connection.
-5. Leave the helper and Printers page open. Printy checks available logs in an isolated off-screen page using your signed-in session, starting with current jobs. For an idle printer, it reads the latest exposed completed/aborted job, if available. Stored queued files are ignored. Stop reading logs interrupts collection. Progress and unavailable-log reasons appear under Attention & logs. If the site blocks the background page or requires login, logs stay unavailable; there is no fallback that opens visible dialogs.
+5. Leave the helper and Printers page open. Printability checks available logs in an isolated off-screen page using your signed-in session, starting with current jobs. For an idle printer, it reads the latest exposed completed/aborted job, if available. Stored queued files are ignored. Stop reading logs interrupts collection. Progress and unavailable-log reasons appear under Attention & logs. If the site blocks the background page or requires login, logs stay unavailable; there is no fallback that opens visible dialogs.
 6. Major changes trigger local notifications. Enable automatic paid AI separately only if desired. Manual Analyze/Refresh remains available. Both analysis paths wait for log collection before sending the snapshot. Collection itself makes no OpenAI request. It refreshes approximately every two minutes on the Printers page, and before analysis when evidence is missing or the printer state/job changed.
 
 Each request sends printer names/IDs, statuses, BROKEN flags, requested material/color, filament slots, current/recent filenames, available remaining-print time, the current job's original total estimate, log coverage, and bounded recent/fault/transition evidence. Emails and URLs are removed from transmitted strings; cookies, SSO tokens, raw page HTML, camera images and API keys are not included. File names and printer names are still sent. API usage is billed to your API account.
@@ -65,11 +73,11 @@ Windows DPAPI is used for local encrypted persistence, outside this project and 
 ## What is now read from 3DPrinterOS
 
 - **Printers page:** rendered printer name/ID, status badge, AMS/filament material labels and RGB swatches, current job rows and stored file rows.
-- **Job Details → Logs:** printer, filename, displayed remaining time, latest state transition, explicit reported fault and the last eight log entries. Printy reads available logs automatically and can be refreshed with Refresh all printer logs. Historical logs cannot supply current remaining time.
+- **Job Details → Logs:** printer, filename, displayed remaining time, latest state transition, explicit reported fault and the last eight log entries. Printability reads available logs automatically and can be refreshed with Refresh all printer logs. Historical logs cannot supply current remaining time.
 - **Live View Wall:** current card status plus data previously captured from the Printers page in the same browser tab. Wall AMS cache expires after two minutes and log evidence after five minutes. AI collection uses the Printers page. No synchronization between separate browser tabs yet.
 - Only loaded page items are available. Collapsed/paginated/unloaded content and unseen logs cannot be inferred. The UI reports log coverage. A recently read page does not guarantee a recently updated printer feed.
 
-The real Fireboy log inspected during development contained error **50364440: Chamber temperature malfunction**, then later transitions back to printing. Printy preserves the earlier fault and marks it historical rather than declaring the printer currently broken.
+The real Fireboy log inspected during development contained error **50364440: Chamber temperature malfunction**, then later transitions back to printing. Printability preserves the earlier fault and marks it historical rather than declaring the printer currently broken.
 
 ## Matching and wait times
 
@@ -77,7 +85,7 @@ The real Fireboy log inspected during development contained error **50364440: Ch
 - Material and color must match **the same loaded slot**. PLA Basic/PLA Matte are grouped with PLA; composite/specialist materials keep their names. This is filament matching, not verification of the printer/nozzle's capability to print an arbitrary material.
 - AMS data takes priority. Manual material/color is a fallback only when AMS was not read. Empty slots cannot satisfy a request.
 - RGB swatches become approximate broad color names; verify the physical spool. Only filament entries rendered by 3DPrinterOS are read, so hidden external-spool/tooltips may be absent. The numbered slots are displayed order, not verified AMS bank labels.
-- Old queued files add **zero wait time** and never reserve an idle printer. Current jobs and very recent file dates are highlighted. Relative page timestamps are approximate; missing dates remain unknown. All files remain accessible in the source UI and collapsed Printy details.
+- Old queued files add **zero wait time** and never reserve an idle printer. Current jobs and very recent file dates are highlighted. Relative page timestamps are approximate; missing dates remain unknown. All files remain accessible in the source UI and collapsed Printability details.
 - Remaining time is the reported current print time, with collection/bed clearance excluded. Paused, failed and broken printers have unknown availability. No fabricated AI availability estimate.
 
 ## AI boundaries
@@ -88,7 +96,7 @@ The extension isolates the connection code from page content scripts. The helper
 
 ## Known prototype limits
 
-- Physical lights, ESP32 boards and BROKEN switches are not connected; the checkbox is a local simulation.
+- Physical integration is implemented but must be flashed, wired and tested on your actual boards. The checkbox remains a separate manual override; the physical switch cannot be cleared from it.
 - The second-manager demonstration is simulated, not an actual SimplyPrint adapter.
 - Printer settings are keyed by name. Recheck when renaming printers or switching accounts.
 - Recommendations cannot confirm that a bed is physically clear or that a device feed is live.

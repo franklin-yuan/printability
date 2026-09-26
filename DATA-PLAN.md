@@ -1,4 +1,4 @@
-# Data plan — version 0.8.0
+# Data plan — version 0.9.0
 
 ## Presentation
 
@@ -40,4 +40,4 @@ The helper whitelists/limits snapshot fields and requests strict JSON output fro
 
 ## Pending
 
-Physical switch transport, ESP32 output, multi-account identity namespaces, cross-browser-tab synchronization, server-backed manager adapters, and calibrated completion/collection prediction remain future work. Local operator overrides are clearly identified as such. The simulated alternate provider remains labeled simulated.
+ESP-NOW switch transport and light output are implemented via six C3 modules and an S3 USB gateway. Helper hardware requests use the existing authenticated loopback connection, independently of AI. Module heartbeats expire, physical BROKEN overrides merge without overwriting manual settings, and one tab holds a short hardware-control lease. Actual board wiring/radio operation still requires physical verification. Multi-account namespaces, server-backed manager adapters and calibrated completion prediction remain future work. The simulated alternate provider remains labeled simulated and never controls hardware.

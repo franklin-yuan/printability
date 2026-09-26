@@ -101,5 +101,14 @@ globalThis.FarmLightsLogic = (() => {
     for(const e of events){const key=e.broken||['error','offline'].includes(e.to)||['fault','fatal','broken'].includes(e.kind)?'down':e.to==='paused'?'paused':['paused','error','offline'].includes(e.from)&&['printing','heating','preparing','idle'].includes(e.to)?'recovered':['idle','finished'].includes(e.to)?'ready':'other';groups[key].push(e);}
     return groups;
   }
-  return {status, recommend, isCurrentJob, groupJobs, materialFamily, colorName, matchesFilament,triage,priorities,waitEstimate,nextPrinter,updateGroups};
+  function hardwareRow(row,hardware,fresh){
+    const id=Number(row.config.light);if(!Number.isInteger(id)||id<1||id>64)return row;
+    const module=hardware?.modules?.find(m=>m.id===id),online=!!(fresh&&hardware.connected&&module?.online&&!module.conflict);
+    return {...row,physicalBroken:module?.broken===true,hardwareUnknown:!online,config:{...row.config,broken:row.config.broken||module?.broken===true},state:online?row.state:'unknown'};
+  }
+  function lightCommands(rows,count=64){
+    const palette={fatal:[255,0,0],fault:[255,0,0],broken:[255,0,0],paused:[255,120,0],recoverable:[0,180,170],offline:[110,0,180],unknown:[110,0,180],finished:[0,200,40],idle:[0,200,40],working:[0,70,255]};
+    return Array.from({length:Math.min(64,count)},(_,index)=>{const id=index+1,assigned=rows.filter(r=>Number(r.config.light)===id);const r=assigned[0];return {id,rgb:assigned.length===1?palette[triage(r).kind]:[0,0,0]};});
+  }
+  return {status, recommend, isCurrentJob, groupJobs, materialFamily, colorName, matchesFilament,triage,priorities,waitEstimate,nextPrinter,updateGroups,hardwareRow,lightCommands};
 })();

@@ -1,4 +1,14 @@
-# Printy — quick start (v0.8.1)
+# Printy — quick start (v0.9.1)
+
+## Wireless lights and physical switches
+
+Switch setup: click Set up module 1 in Settings, then flip its switch. Repeat for each LED-chain position, then choose the printer for each number. Restart the helper and reload the extension after updating.
+
+Version 0.9 adds the USB helper bridge for an ESP32-S3 N16R8 gateway and six XIAO ESP32-C3 modules using ESP-NOW. Firmware and the full wiring/upload guide are in `firmware/README.md` in the full package. Install the firmware before enabling hardware in Settings. Restart the helper and reload/refresh the extension. Connect the S3 COM port in the helper, pair the connection code, enable six modules, and assign their IDs to printers. The API key is optional; hardware makes no paid requests.
+
+Current wiring: the S3 drives six daisy-chained eight-pixel sticks (48 LEDs) from GPIO4. Each C3 reads only its D4/GPIO6 switch. Module IDs 1–6 correspond to sticks 1–6 in chain order. The S3 handles physical red overrides without the computer, provided the switch radio link and LED power are working.
+
+Physical BROKEN overrides affect recommendations and the WS2812. A missing module makes its assigned printer's availability unknown. Hardware is off by default until you enable it. USB support is bundled in the helper's vendor folder.
 
 The default Start print screen shows filament filters, one large next-printer wait, and the top two urgent actions together. All next steps opens the complete action list and AI details. Updates remains separate. Reload the extension and refresh the dashboard after updating.
 
@@ -29,14 +39,14 @@ When automatic major-change notifications are enabled, Printy watches loaded pri
 
 ## Try the interface immediately
 
-Open `extension/demo.html`, or use **Open interactive demo** from the extension popup. The demo uses fictional printer data and the same matching/UI code. It is not a working SimplyPrint integration.
+The extension operates on the authenticated 3DPrinterOS Printers page. There is no demo mode.
 
 1. Select PLA + Blue in Overview.
 2. Open Settings, expand Crane and mark it BROKEN locally.
 3. Return to Overview: Remy becomes the suggested printer.
 4. Open a printer's Files & evidence section to see current/recent files and expand All files for older items.
 
-The standalone file demo has no AI connection. Open the demo from the installed extension to use the helper.
+Open Grok voice from the real dashboard after connecting the local helper.
 
 ## Update the existing extension
 
@@ -88,8 +98,8 @@ The extension isolates the connection code from page content scripts. The helper
 
 ## Known prototype limits
 
-- Physical lights, ESP32 boards and BROKEN switches are not connected; the checkbox is a local simulation.
-- The second-manager demonstration is simulated, not an actual SimplyPrint adapter.
+- Physical integration is implemented but must be flashed, wired and tested on your actual boards. The checkbox remains a separate manual override; the physical switch cannot be cleared from it.
+- This build targets the authenticated 3DPrinterOS dashboard.
 - Printer settings are keyed by name. Recheck when renaming printers or switching accounts.
 - Recommendations cannot confirm that a bed is physically clear or that a device feed is live.
 - SSO remains in the user's normal browser. No login automation or admin API access is required.
