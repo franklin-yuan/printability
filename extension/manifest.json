@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Printability \u2014 3DPrinterOS Companion",
-  "version": "0.12.0",
-  "description": "Printer finder, physical status lights and Printability Voice studio mentor.",
+  "version": "0.13.0",
+  "description": "Find a free printer, see the wait, talk to Printability Voice, and spot machines with status lights.",
   "permissions": [
     "storage",
     "notifications",
@@ -29,9 +29,7 @@
         "logic.js",
         "source.js",
         "job-details.js",
-        "log-reader.js",
         "printer-grid.js",
-        "changes.js",
         "content.js"
       ],
       "run_at": "document_idle"

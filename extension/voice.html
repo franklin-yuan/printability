@@ -1,18 +1,26 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><title>Printability · Printability Voice</title>
 <link rel="stylesheet" href="voice.css">
-<main><header><span class="eyebrow">PRINTABILITY / STUDIO MENTOR</span><h1>Printability Voice</h1><p>Tell me what you want to print. I’ll find a match, show you the file, and guide the review.</p></header>
+<main><header><span class="eyebrow">PRINTABILITY · FIND A PRINTER</span><h1>Printability Voice</h1></header>
 <section class="card"><div id="status" role="status">Voice is off</div><div class="controls"><button id="start">Start Printability Voice</button><button id="stop" disabled>Stop</button></div>
-<p class="small">Printability Voice answers your requests. Printer updates appear as regular pop-ups.</p>
-<button id="microphone-setup" class="secondary">Set up microphone</button>
-<p class="small">Uses your xAI API account while connected. Audio and relevant printer data go to xAI. Nothing is sent until you start. Sessions stop after 10 minutes.</p></section>
-<section class="card"><button id="talk" disabled>Mute microphone</button><p class="small">Speak naturally after starting voice. Printability Voice detects when you finish. Your microphone stays on until you mute or stop.</p><div id="transcript" aria-live="polite"></div></section>
-<dialog class="card" id="proposal" hidden><h2>Review this print</h2><p id="selection"></p><p><b>Review only — printing is disabled.</b></p>
-<button id="review-open">Open model / details</button><button id="review-refresh" class="secondary">Read current file info</button><p id="review-status" role="status"></p>
-<details><summary>Printer, file and live information</summary><dl id="review-details"></dl></details>
-<h2>Check configuration</h2><div id="preflight"></div>
-<label><input id="clear" type="checkbox"> I checked: bed clear, plate installed, printer ready.</label>
-<label hidden><input id="material" type="checkbox"></label>
-<button disabled>Print disabled</button><button id="cancel">Close review</button></dialog>
+
+<details><summary>Voice settings</summary><button id="microphone-setup" class="secondary">Set up microphone</button>
+<p class="small">Uses your xAI API account while connected. Audio and relevant printer data go to xAI. Nothing is sent until you start. Sessions stop after 10 minutes.</p></details></section>
+<section class="card"><button id="talk" disabled>Mute microphone</button><div id="transcript" aria-live="polite"></div></section>
+<dialog class="card" id="proposal" hidden>
+  <h2>Review this print</h2>
+  <div id="selection" class="review-hero"></div>
+  <p id="review-alerts" class="review-alerts" hidden></p>
+  <ul id="review-checks" class="review-checks"></ul>
+  <p class="small"><b>Review only — this app cannot start a print.</b></p>
+  <div class="controls"><button id="review-open">Open model / details</button><button id="review-refresh" class="secondary">Refresh printer info</button></div>
+  <p id="review-status" role="status"></p>
+  <details><summary>Technical details</summary><dl id="review-details"></dl></details>
+  <h2>At the printer</h2>
+  <div id="preflight"></div>
+  <label><input id="clear" type="checkbox"> I checked: bed clear, plate installed, printer ready.</label>
+  <label hidden><input id="material" type="checkbox"></label>
+  <button disabled>Print disabled</button><button id="cancel">Close review</button>
+</dialog>
 
 <button id="settings" class="secondary">Connection settings</button>
-</main><script src="preflight.js"></script><script src="voice.js"></script></html>
+</main><script src="preflight.js"></script><script src="voice-intent.js"></script><script src="voice.js"></script></html>

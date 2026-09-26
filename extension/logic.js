@@ -57,58 +57,64 @@ globalThis.FarmLightsLogic = (() => {
     const slots=row.slotsKnown ? row.slots : [{material:row.config.material,color:row.config.color}];
     return slots.some(s=>(!material||materialFamily(s.material)===materialFamily(material))&&(!color||s.color===color));
   }
-  function triage(row, now=Date.now()) {
-    const make=(kind,label,rank,action,reason)=>({kind,label,rank,priority:rank>=80?'high':rank>=40?'medium':'low',action,reason});
-    if(row.config?.broken||row.broken)return make('broken','BROKEN',95,'Inspect and repair before returning to service.','Operator marked this printer broken.');
-    if(row.ambiguous)return make('unknown','Identity unclear',50,'Resolve duplicate printer names before assigning work.','Printer identity is ambiguous.');
-    const j=row.log, active=(row.jobs||[]).find(isCurrentJob);
-    const verified=j&&now-j.observedAt>=0&&now-j.observedAt<300000&&j.currentJobVerified&&active?.name===j.file&&(!j.jobId||String(active.id)===String(j.jobId))&&j.phase===row.state;
-    const fault=verified&&!j.faultHistorical?j.fault?.message||'':'';
-    // No undocumented error-code lookup or inference from a Resume button.
-    if(fault&&['paused','error'].includes(row.state)) {
-      if(/\b(?:fatal|unrecoverable|thermal runaway)\b/i.test(fault)&&! /\b(?:not fatal|non[- ]fatal|no fatal)\b/i.test(fault))return make('fatal','Fatal fault reported',100,'Keep this printer out of service; inspect the reported fault before reuse.',fault);
-      if(/\b(?:filament (?:has )?run out|out of filament|filament runout)\b/i.test(fault))return make('recoverable','Paused · filament needed',65,'Check and reload filament, then confirm the printer is ready before resuming.',fault);
-      return make('fault','Fault · inspect first',90,'Inspect the reported fault before attempting to resume.',fault);
-    }
-    if(row.state==='error')return make('fault','Error · inspect first',90,'Open the current job log and inspect the error before reuse.','A current error is reported; its cause is not verified.');
-    if(row.state==='paused') {
-      const last=verified?(j.events||[]).filter(e=>!/status changed/i.test(e.message)).at(-1)?.message||'':'';
-      if(/^(?:Print|Printing|Job) (?:was )?paused by (?:the )?user[.!]?$/i.test(last))return make('recoverable','Paused · manual',60,'Check why it was paused; resume only after confirming the printer is ready.',last);
-      if(/^(?:Filament (?:has )?run out|Out of filament|Filament runout)[.!]?$/i.test(last))return make('recoverable','Paused · filament needed',65,'Check and reload filament, then confirm readiness before resuming.',last);
-      return make('paused','Paused · check cause',70,'Review the current job log and check the printer before resuming.',verified?'The pause reason is not established.':'Current job evidence is missing, stale or mismatched.');
-    }
-    if(row.state==='offline')return make('offline','Disconnected',55,'Check power and connection; confirm the job state at the printer.','The dashboard cannot confirm the printer state.');
-    if(row.state==='unknown')return make('unknown','Status unknown',45,'Check the dashboard connection and printer status.','There is not enough evidence to choose a printer action.');
-    if(row.state==='finished')return make('finished','Ready for collection',30,'Collect the print and confirm bed clearance.','The dashboard reports completion.');
-    if(row.state==='idle')return make('idle','Idle',0,'Confirm bed clearance before starting a matching job.','No waiting time is added for stored files.');
-    return make('working',row.state==='printing'?'Printing':row.state==='heating'?'Heating':'Preparing',0,'No intervention indicated; monitor for changes.','Normal activity reported.');
+  // Simple dashboard status for lights and cards — no log-based fault triage.
+  function statusInfo(row) {
+    const make=(kind,label,hint)=>({kind,label,hint});
+    if(row.config?.broken||row.broken)return make('broken','Out of service','This printer is marked down. Pick another.');
+    if(row.ambiguous)return make('unknown','Name unclear','More than one printer shares this name.');
+    if(row.state==='error')return make('error','Unavailable','Dashboard shows an error — try another printer.');
+    if(row.state==='paused')return make('paused','Paused','Not a reliable wait estimate right now.');
+    if(row.state==='offline')return make('offline','Disconnected','Not reachable from the dashboard.');
+    if(row.state==='unknown')return make('unknown','Status unknown','Check the dashboard connection.');
+    if(row.state==='finished')return make('finished','Ready to collect','Someone may still need to clear the bed.');
+    if(row.state==='idle')return make('idle','Available','Confirm the bed is clear before starting.');
+    if(row.state==='printing')return make('working','Printing','In use — see the wait estimate if available.');
+    if(row.state==='heating')return make('working','Heating','Warming up for a print.');
+    if(row.state==='preparing')return make('working','Preparing','Getting ready to print.');
+    return make('working',row.state||'Busy','In use.');
   }
-  function priorities(rows,now=Date.now()){return rows.map(row=>({row,...triage(row,now)})).filter(x=>x.rank>0).sort((a,b)=>b.rank-a.rank||a.row.name.localeCompare(b.row.name));}
+  // Back-compat for callers that still expect triage().
+  function triage(row){const info=statusInfo(row);return {...info,rank:0,priority:'low',action:info.hint,reason:info.label};}
   function waitEstimate(row,buffer=5){
-    if(row.config?.broken||row.broken||row.ambiguous)return {minutes:null,label:'Wait unknown · needs attention'};
-    if(row.state==='idle'&&!(row.jobs||[]).some(isCurrentJob))return {minutes:0,label:'Available now · confirm bed clearance'};
-    if(row.state==='printing'&&Number.isFinite(row.minutes)&&row.minutes>=0){const minutes=Math.ceil(row.minutes)+Math.max(0,Number(buffer)||0);return {minutes,label:`Estimated wait: ~${minutes} min`,note:`${Math.ceil(row.minutes)} min reported printing + ${Math.max(0,Number(buffer)||0)} min collection buffer. Not a reservation.`};}
-    if(row.state==='finished')return {minutes:null,label:'Waiting for collection · confirm bed clearance'};
-    return {minutes:null,label:'Wait unknown',note:'A current remaining-time estimate is unavailable or the printer needs attention.'};
+    if(row.config?.broken||row.broken||row.ambiguous)return {minutes:null,label:'Unavailable · out of service'};
+    if(row.state==='idle'&&!(row.jobs||[]).some(isCurrentJob))return {minutes:0,label:'Available now · confirm bed is clear'};
+    if(row.state==='printing'&&Number.isFinite(row.minutes)&&row.minutes>=0){const minutes=Math.ceil(row.minutes)+Math.max(0,Number(buffer)||0);return {minutes,label:`~${minutes} min until free`,note:`${Math.ceil(row.minutes)} min reported left + ${Math.max(0,Number(buffer)||0)} min to collect. Not a reservation.`};}
+    if(row.state==='finished')return {minutes:null,label:'Waiting for collection · bed may still be full'};
+    return {minutes:null,label:'Wait unknown',note:'Remaining time is not shown on the dashboard yet.'};
   }
   function nextPrinter(rows,material,color,buffer=5){
     const candidates=rows.filter(r=>!r.ambiguous&&!r.config?.broken&&!r.broken&&matchesFilament(r,material,color));
     const timed=candidates.map(row=>({row,...waitEstimate(row,buffer)})).filter(x=>x.minutes!==null).sort((a,b)=>a.minutes-b.minutes||a.row.name.localeCompare(b.row.name));
     return {next:timed[0]||null,unknown:candidates.filter(r=>waitEstimate(r,buffer).minutes===null).length};
   }
+  function matchingPrinters(rows,material,color,buffer=5){
+    return rows.filter(r=>!r.ambiguous&&matchesFilament(r,material,color))
+      .map(row=>({row,...waitEstimate(row,buffer),...statusInfo(row)}))
+      .sort((a,b)=>{
+        const am=a.minutes,bm=b.minutes;
+        if(am!==null&&bm!==null&&am!==bm)return am-bm;
+        if(am!==null&&bm===null)return -1;
+        if(am===null&&bm!==null)return 1;
+        return a.row.name.localeCompare(b.row.name,undefined,{numeric:true});
+      });
+  }
   function updateGroups(events){
     const groups={down:[],paused:[],recovered:[],ready:[],other:[]};
-    for(const e of events){const key=e.broken||['error','offline'].includes(e.to)||['fault','fatal','broken'].includes(e.kind)?'down':e.to==='paused'?'paused':['paused','error','offline'].includes(e.from)&&['printing','heating','preparing','idle'].includes(e.to)?'recovered':['idle','finished'].includes(e.to)?'ready':'other';groups[key].push(e);}
+    for(const e of events){const key=e.broken||['error','offline'].includes(e.to)||e.kind==='broken'?'down':e.to==='paused'?'paused':['paused','error','offline'].includes(e.from)&&['printing','heating','preparing','idle'].includes(e.to)?'recovered':['idle','finished'].includes(e.to)?'ready':'other';groups[key].push(e);}
     return groups;
   }
   function hardwareRow(row,hardware,fresh){
-    const id=Number(row.config.light);if(!Number.isInteger(id)||id<1||id>64)return row;
+    const id=Number(row.config.light);if(!Number.isInteger(id)||id<1||id>6)return row;
     const module=hardware?.modules?.find(m=>m.id===id),online=!!(fresh&&hardware.connected&&module?.online&&!module.conflict);
     return {...row,physicalBroken:module?.broken===true,hardwareUnknown:!online,config:{...row.config,broken:row.config.broken||module?.broken===true},state:online?row.state:'unknown'};
   }
-  function lightCommands(rows,count=64){
-    const palette={fatal:[255,0,0],fault:[255,0,0],broken:[255,0,0],paused:[255,120,0],recoverable:[0,180,170],offline:[110,0,180],unknown:[110,0,180],finished:[0,200,40],idle:[0,200,40],working:[0,70,255]};
-    return Array.from({length:Math.min(64,count)},(_,index)=>{const id=index+1,assigned=rows.filter(r=>Number(r.config.light)===id);const r=assigned[0];return {id,rgb:assigned.length===1?palette[triage(r).kind]:[0,0,0]};});
+  function lightCommands(rows,count=6,highlight=''){
+    const palette={broken:[255,0,0],error:[255,0,0],paused:[255,120,0],offline:[110,0,180],unknown:[110,0,180],finished:[0,200,40],idle:[0,200,40],working:[0,70,255]};
+    return Array.from({length:Math.min(6,count)},(_,index)=>{
+      const id=index+1,assigned=rows.filter(r=>Number(r.config.light)===id),r=assigned.length===1?assigned[0]:null;
+      const flash=r&&highlight&&String(r.id||r.name)===String(highlight)?1:0;
+      return {id,rgb:r?palette[statusInfo(r).kind]:[0,0,0],flash};
+    });
   }
-  return {status, recommend, isCurrentJob, groupJobs, materialFamily, colorName, matchesFilament,triage,priorities,waitEstimate,nextPrinter,updateGroups,hardwareRow,lightCommands};
+  return {status, recommend, isCurrentJob, groupJobs, materialFamily, colorName, matchesFilament,statusInfo,triage,waitEstimate,nextPrinter,matchingPrinters,updateGroups,hardwareRow,lightCommands};
 })();

@@ -1,3 +1,4 @@
+chrome.notifications.clear('printy-farm-update').catch(()=>{});
 let startupError='';
 chrome.storage.local.setAccessLevel({accessLevel:'TRUSTED_CONTEXTS'}).catch(e=>{startupError=e.message||'Storage initialization failed.';});
 async function helper(type,payload){
@@ -9,13 +10,13 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
  const page=sender.id===chrome.runtime.id&&sender.url?.startsWith('https://cloud.3dprinteros.com/');
  const extension=sender.id===chrome.runtime.id&&sender.url?.startsWith(chrome.runtime.getURL(''));
  const voice=extension&&sender.url?.split('?')[0]===chrome.runtime.getURL('voice.html');if(!page&&!extension)return;
- if(m.type==='open-voice'&&page){const opening=chrome.sidePanel.open({tabId:sender.tab.id});Promise.all([opening,chrome.storage.session.set({voiceSource:sender.tab.id})]).then(()=>reply({ok:true})).catch(()=>reply({ok:false,error:'Could not open voice.'}));return true;}
+ if(m.type==='open-voice'&&page){const opening=chrome.sidePanel.open({tabId:sender.tab.id});Promise.all([opening,chrome.storage.session.set({voiceSource:sender.tab.id})]).then(()=>reply({ok:true})).catch(e=>reply({ok:false,error:'Could not open Printability Voice: '+(e.message||'Refresh the dashboard and try again.')}));return true;}
  (async()=>{
  if(m.type==='worker-status')return {ok:!startupError,error:startupError,version:chrome.runtime.getManifest().version};
  if(m.type==='select-voice-source'&&extension){const tab=await chrome.tabs.get(m.tabId);if(!tab.url?.startsWith('https://cloud.3dprinteros.com/'))throw Error('Select the printer dashboard.');await chrome.storage.session.set({voiceSource:tab.id});return {ok:true};}
  if(m.type==='open-options'){await chrome.runtime.openOptionsPage();return {ok:true};}
  if(['get-settings','save-settings'].includes(m.type)){if(!/^farm-lights:3dprinteros:v1$/.test(m.key))throw Error('Invalid settings key.');if(m.type==='save-settings'){await chrome.storage.local.set({[m.key]:m.value});return {ok:true};}return {ok:true,value:(await chrome.storage.local.get(m.key))[m.key]};}
- if(m.type==='notify-updates'&&page){const events=(m.events||[]).slice(0,150).map(e=>({id:String(e.id),name:String(e.name),description:String(e.description),to:e.to,from:e.from}));try{if(m.showNotification!==false)await chrome.notifications.create('printy-farm-update',{type:'basic',iconUrl:chrome.runtime.getURL('icon.png'),title:'Printability · Printer updates',message:events.slice(0,5).map(e=>`${e.name}: ${e.description}`).join('\n').slice(0,450)});}catch{}return {ok:true};}
+ if(m.type==='notify-updates')return {ok:true};
  if(m.type==='voice-source'&&voice)return {ok:true,source:sender.tab?.id??(await chrome.storage.session.get('voiceSource')).voiceSource};
  if(m.type==='voice-token'&&voice)return helper('voice-token');
  if(m.type==='voice-commit')throw Error('Print execution is disabled. Review only.');

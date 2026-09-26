@@ -1,4 +1,5 @@
-/* Reads only the visible Job Details dialog. No network interception or job controls. */
+/* Reads only the visible Job Details dialog. No network interception or job controls.
+   Used for remaining print time when a user already has Job Details open — not for fault triage. */
 globalThis.PrintyJobs = (() => {
   function parse(text, knownNames = [], controls = []) {
     if (!/^Job Details\b/m.test(text)) return null;
@@ -19,20 +20,14 @@ globalThis.PrintyJobs = (() => {
       const order=Number(`${m[5]}${m[3]}${m[4]}${m[1].padStart(2,'0')}${m[2]}`);
       events.push({timestamp,order,message});
     }
-    // Use timestamp order, preserving source order for entries in the same minute.
     events.sort((a,b)=>a.order-b.order);
     const transitions=events.map(e=>({...e,state:e.message.match(/^The printer status changed:\s*from .+? to ([\w ]+?)[.!]?$/i)?.[1]?.trim().toLowerCase()})).filter(e=>e.state);
     const latest=transitions.at(-1);
-    const fault=events.filter(e=>/^(?:Printer (?:info|error)|Error|Printing failed|Printing error)\b/i.test(e.message)
-      && /\b(malfunction|failed|failure|error|fault)\b/i.test(e.message)
-      && !/\b(no errors?|cleared|resolved)\b/i.test(e.message)).at(-1);
     const currentJobVerified=controls.some(s=>/^(Pause|Resume)$/i.test(s.trim()));
     const pausedControl=controls.some(s=>/^Resume$/i.test(s.trim()));
     const phase=pausedControl?'paused':latest?.state||'unknown';
     return {printer,file,timeMinutes,phase,currentJobVerified,latest:latest?{timestamp:latest.timestamp,message:latest.message}:null,
-      fault:fault?{timestamp:fault.timestamp,message:fault.message}:null,
       availabilityMinutes:currentJobVerified&&phase==='printing'?timeMinutes:null,
-      events:events.slice(-8).map(e=>({timestamp:e.timestamp,message:e.message})),
       observedAt:Date.now(),source:'open-job-details'};
   }
   function capture(document, knownNames) {
@@ -52,7 +47,6 @@ globalThis.PrintyJobs = (() => {
       result.availabilityMinutes=result.currentJobVerified&&result.phase==='printing'?result.timeMinutes:null;
       result.slots=PrintySource.slots(live);
     }
-    result.faultHistorical=!!result.fault&&(!result.currentJobVerified||!['paused','error'].includes(result.phase));
     return result;
   }
   return {parse,capture};

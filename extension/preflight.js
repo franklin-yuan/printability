@@ -20,15 +20,36 @@ globalThis.PrintabilityPreflight={
   mount(host,review){
     host.replaceChildren();const req=review.requirements||{};
     const picked=(review.slots||[]).find(s=>String(s.material).replace(/\s+(Basic|Matte)$/i,'').toLowerCase()===String(req.material||'').replace(/\s+(Basic|Matte)$/i,'').toLowerCase()&&(!review.requestedColor||review.requestedColor==='Any'||s.color===review.requestedColor));
-    const values={material:req.material||'',profile:req.profile||'',fileNozzle:req.nozzle||'',filePlate:req.plate||'',printerModel:review.model==='Not reported'?'':review.model||'',slot:picked?String(picked.slot):'',color:review.requestedColor==='Any'?'':review.requestedColor||'',anyColor:review.requestedColor==='Any'},fields=document.createElement('details'),results=document.createElement('div');
-    const summary=document.createElement('summary');summary.textContent='Inspect or correct configuration';fields.append(summary);
-    const overview=document.createElement('p');overview.textContent=`${req.material||'Material unknown'} · ${picked?'AMS slot '+picked.slot+' ('+(picked.color||'color unknown')+')':'No matching slot'} · ${review.model||'Model unknown'}`;host.append(overview);
-    const intro=document.createElement('p');intro.textContent='Known file settings and the matching AMS slot are filled in. Missing settings still need verification.';host.append(intro,results,fields);
-    function update(){results.replaceChildren();const checks=PrintabilityPreflight.check(review,values);const title=document.createElement('strong');title.textContent=checks.some(c=>c.state==='mismatch')?'Mismatch — resolve before printing':checks.some(c=>c.state==='unknown')?'Review incomplete':'Recorded checks agree — printing remains disabled';results.append(title);const missing=checks.filter(c=>c.state==='unknown');if(missing.length){const note=document.createElement('p');note.textContent='Still to check: '+missing.map(c=>c.name).join('; ');results.append(note);}for(const c of checks.filter(c=>c.state==='mismatch')){const item=document.createElement('p');item.className='check-'+c.state;item.textContent=`${c.state==='match'?'MATCH':c.state==='manual'?'MANUALLY CHECKED':c.state==='mismatch'?'MISMATCH':'NOT VERIFIED'} · ${c.name}: ${c.detail}`;results.append(item);}}
-    function input(label,key,type='text'){const l=document.createElement('label'),i=document.createElement('input');l.textContent=label;i.type=type;if(type==='checkbox')i.checked=!!values[key];else i.value=values[key]||'';i.oninput=()=>{values[key]=type==='checkbox'?i.checked:i.value;update();};l.append(i);fields.append(l);}
+    const values={material:req.material||'',profile:req.profile||'',fileNozzle:req.nozzle||'',filePlate:req.plate||'',printerModel:review.model==='Not reported'?'':review.model||'',slot:picked?String(picked.slot):'',color:review.requestedColor==='Any'?'':review.requestedColor||'',anyColor:review.requestedColor==='Any'},fields=document.createElement('details'),results=document.createElement('div'),manuals=document.createElement('div');
+    const summary=document.createElement('summary');summary.textContent='Optional slice / AMS notes';fields.append(summary);
+    const overview=document.createElement('p');
+    overview.textContent=(req.material||'Material still unknown')+' · '+(picked?'Looks like AMS slot '+picked.slot+(picked.color?' ('+picked.color+')':''):'No matching AMS slot found yet')+'.';
+    const intro=document.createElement('p');intro.className='small';intro.textContent='Check these at the machine. Nothing here starts a print or changes the printer.';
+    host.append(overview,intro,results,manuals,fields);
+    function plainMismatch(c){
+      if(c.name==='Printer availability')return 'Printer is not free ('+(c.detail||'busy')+').';
+      if(c.name.startsWith('File material'))return 'Material does not match the selected AMS slot.';
+      if(c.name.startsWith('File color'))return 'Color does not match the selected AMS slot.';
+      if(c.name==='Build plate')return 'Build plate may not match what this file expects.';
+      if(c.name==='Printer profile')return 'Printer model may not match the sliced profile.';
+      if(c.name.startsWith('Nozzle'))return 'Nozzle size may not match what this file expects.';
+      return c.name+': '+c.detail;
+    }
+    function update(){
+      results.replaceChildren();
+      const checks=PrintabilityPreflight.check(review,values);
+      const title=document.createElement('strong');
+      title.textContent=checks.some(c=>c.state==='mismatch')?'Fix these before you print':checks.some(c=>c.state==='unknown')?'A few checks still need you':'Looks consistent — printing stays disabled here';
+      results.append(title);
+      for(const c of checks.filter(c=>c.state==='mismatch')){
+        const item=document.createElement('p');item.className='check-'+c.state;item.textContent=plainMismatch(c);results.append(item);
+      }
+    }
+    function input(label,key,type='text',into=fields){const l=document.createElement('label'),i=document.createElement('input');l.textContent=label;i.type=type;if(type==='checkbox')i.checked=!!values[key];else i.value=values[key]||'';i.oninput=()=>{values[key]=type==='checkbox'?i.checked:i.value;update();};l.append(i);into.append(l);}
     const label=document.createElement('label');label.textContent='AMS slot to use';const select=document.createElement('select');select.add(new Option('Choose slot',''));for(const s of review.slots||[])select.add(new Option(`${s.slot}: ${s.material} · ${s.color||'unknown color'}`,String(s.slot)));select.value=values.slot;select.onchange=()=>{values.slot=select.value;update();};label.append(select);fields.append(label);
     for(const [label,key] of [['File material (from Slice Info)','material'],['Required color','color'],['Sliced printer profile','profile'],['Actual printer model','printerModel'],['Sliced nozzle diameter (mm)','fileNozzle'],['Installed nozzle diameter (mm)','printerNozzle'],['Sliced plate type','filePlate'],['Installed plate type','printerPlate']])input(label,key);
-    for(const [label,key] of [['Any color is acceptable','anyColor'],['I inspected model size, orientation and layers','geometry'],['I inspected supports and first layer','supports'],['I verified ALL material-to-slot mappings and spool quantities','mapping'],['I verified target temperatures against filament and plate requirements','temperatures'],['I checked the bed and physical printer','physical']])input(label,key,'checkbox');
+    input('Any color is acceptable','anyColor','checkbox',fields);
+    for(const [label,key] of [['I inspected model size, orientation and layers','geometry'],['I inspected supports and first layer','supports'],['I verified material-to-slot mappings and spool amounts','mapping'],['I verified temperatures for this filament and plate','temperatures'],['I checked the bed and physical printer','physical']])input(label,key,'checkbox',manuals);
     update();
     return {refresh(next){review=next;update();},values};
   }

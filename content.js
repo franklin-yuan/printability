@@ -252,15 +252,15 @@
 
     urgent.forEach((task,i)=>{const item=el('section',undefined,'result');item.style.borderLeft=`5px solid ${tones[task.kind]}`;item.append(el('b',`${i+1}. ${task.row.name} · ${task.label}`),el('p',task.action),el('p',task.reason,'muted'));body.append(item);});
 
-    body.append(button('Talk to Grok',()=>chrome.runtime.sendMessage({type:'open-voice'}),'wide'));
-    body.append(el('p','Ask your studio mentor for help, printer choices or a print setup.','muted'));
+    body.append(button('Printability Voice',()=>chrome.runtime.sendMessage({type:'open-voice'}),'wide'));
+    body.append(el('p','Ask Printability Voice for help, printer choices or a print setup.','muted'));
   }
 
   function renderStart(body){
 
     const compact=el('style');compact.textContent='.start-view .fields{margin:5px 0}.start-view label{margin:4px 0}.start-view .result{margin:9px 0;padding:10px}.start-view h3{font-size:17px;margin:4px 0}.start-view p{margin:4px 0}.urgent-item{padding:7px 9px;border-left:4px solid;margin:6px 0;background:#fff8f3}.urgent-item p{font-size:12px;line-height:1.35}';body.append(compact);body.classList.add('start-view');
 
-    body.append(el('h3','Find a printer'),button('Talk to Grok',()=>chrome.runtime.sendMessage({type:'open-voice'})));
+    body.append(el('h3','Find a printer'),button('Printability Voice',()=>chrome.runtime.sendMessage({type:'open-voice'})));
 
     const fields=el('div',undefined,'fields');fields.append(select('Material',materials,material,v=>{material=v;changed();}),select('Color',colors,color,v=>{color=v;changed();}));body.append(fields);
 
@@ -325,8 +325,8 @@
 
     const autoLabel=el('label'),autoCheck=el('input');autoCheck.type='checkbox';autoCheck.checked=settings.autoNotifications;autoCheck.onchange=()=>{settings.autoNotifications=autoCheck.checked;changeTracker.reset();if(!settings.autoNotifications){toast?.remove();toast=null;}save();changed();};autoLabel.append(autoCheck,document.createTextNode('Automatic major-change notifications'));body.append(autoLabel);
 
-    body.append(button('Open Grok voice',()=>chrome.runtime.sendMessage({type:'open-voice'}),'wide'));
-    body.append(el('p','Grok speaks changes while voice is connected. Start and stop it in the voice panel. Your xAI key stays in the helper.','muted'));
+    body.append(button('Printability Voice',()=>chrome.runtime.sendMessage({type:'open-voice'}),'wide'));
+    body.append(el('p','Printability Voice answers your spoken requests. Printer changes use regular pop-ups. Your xAI key stays in the helper.','muted'));
     body.append(el('h4','Wait estimates & files'));
 
     number('Collection buffer in minutes','collectionMinutes',0,60);
@@ -402,7 +402,7 @@
         respond({ok:true,proposal:printProposal});return;
       }
       const p=printProposal;printProposal=null;
-      if(!p||message.nonce!==p.nonce||Date.now()>p.expires||message.confirmed!==true)throw Error('Print confirmation expired. Ask Grok to prepare it again.');
+      if(!p||message.nonce!==p.nonce||Date.now()>p.expires||message.confirmed!==true)throw Error('Print confirmation expired. Ask Printability Voice to prepare it again.');
       const {r,j}=printTarget(p.printerId,p.fileId);if(j.name!==p.file||r.name!==p.printer)throw Error('Selection changed. Prepare it again.');
       startButton(j).click();
       respond({ok:true,status:'requested',message:'Start requested for '+p.file+' on '+p.printer+'. Complete any native 3DPrinterOS confirmation. Printing is not yet verified.'});

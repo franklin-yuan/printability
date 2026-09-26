@@ -46,7 +46,7 @@ The extension operates on the authenticated 3DPrinterOS Printers page. There is 
 3. Return to Overview: Remy becomes the suggested printer.
 4. Open a printer's Files & evidence section to see current/recent files and expand All files for older items.
 
-Open Grok voice from the real dashboard after connecting the local helper.
+Open Printability Voice from the real dashboard after connecting the local helper.
 
 ## Update the existing extension
 

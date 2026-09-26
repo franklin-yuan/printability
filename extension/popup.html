@@ -1,7 +1,23 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><title>Printability</title>
-<style>body{font:14px system-ui;width:310px;margin:0;padding:22px;color:#183d32;background:#f4f7f5}h1{font-size:25px;margin:0 0 6px}p{line-height:1.5;color:#526d61}button,a{box-sizing:border-box;display:block;width:100%;margin:10px 0;padding:13px;border:1px solid #d5e2da;border-radius:11px;background:white;color:#214c3d;text-decoration:none;text-align:center;cursor:pointer;font:inherit;font-weight:600}#voice{background:linear-gradient(120deg,#5541a6,#7956c5);color:white;border:0;padding:17px}.dashboard{background:#1c5140;color:white}#status{font-size:12px;min-height:18px}.caption{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#7b6a9c}</style>
+<style>
+body{font:14px/1.45 "Segoe UI",system-ui,sans-serif;width:320px;margin:0;padding:18px 18px 14px;color:#17382f;background:linear-gradient(#f7faf8,#f3f6f8)}
+h1{font-size:22px;margin:0 0 4px;letter-spacing:-.4px}p{line-height:1.45;color:#526d61;margin:0 0 14px}
+button,a{box-sizing:border-box;display:block;width:100%;margin:8px 0;padding:12px;border:1px solid #d5e2da;border-radius:12px;background:white;color:#214c3d;text-decoration:none;text-align:center;cursor:pointer;font:inherit;font-weight:650}
+a.dashboard{background:#1c5140;color:white;border:0}
+#status{font-size:12px;min-height:18px;color:#526d61}
+#voice{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;gap:12px;text-align:left;color:#fff;border:1px solid #ffffff22;border-radius:16px;padding:12px;margin:0 0 12px;background:radial-gradient(90px 60px at 12% 0%,#ffffff18,transparent 70%),linear-gradient(145deg,#1a1528,#2a2144 42%,#1b2438);box-shadow:0 10px 22px #1a103033}
+#voice:before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;background:linear-gradient(115deg,#9b7bff,#3ecfb2 55%,#e2c4ff);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+#voice .mark,#voice .copy{position:relative;z-index:1}
+#voice .mark{display:flex;align-items:flex-end;justify-content:center;gap:2px;width:36px;height:36px;flex:none;padding-bottom:8px;border-radius:11px;background:linear-gradient(160deg,#7a5cff,#2f9f8f)}
+#voice .mark i{display:block;width:3px;border-radius:3px;background:#fff;transform-origin:bottom;animation:eq 1.05s ease-in-out infinite}
+#voice .mark i:nth-child(1){height:7px}#voice .mark i:nth-child(2){height:13px;animation-delay:.12s}#voice .mark i:nth-child(3){height:9px;animation-delay:.24s}#voice .mark i:nth-child(4){height:15px;animation-delay:.06s}
+#voice .copy{display:flex;flex-direction:column;gap:1px}#voice small{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#c9b8ff;font-weight:750}#voice strong{font-size:15px;letter-spacing:-.2px}
+#voice:disabled{opacity:.55;cursor:wait}
+@keyframes eq{50%{transform:scaleY(.45)}}
+@media(prefers-reduced-motion:reduce){#voice .mark i{animation:none}}
+</style>
 <h1>Printability</h1><p>Your next print, clearly.</p>
-<div class="caption">Voice assistant · powered by Grok</div><button id="voice">◉ Printability Voice</button>
+<button id="voice"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="copy"><small>Voice</small><strong>Printability Voice</strong></span></button>
 <a class="dashboard" href="https://cloud.3dprinteros.com/#/printers" target="_blank" rel="noopener">Open printer dashboard</a>
 <button id="refresh">Refresh dashboard</button><button id="settings">Connection settings</button><p id="status" role="status"></p>
 <script src="popup.js"></script></html>

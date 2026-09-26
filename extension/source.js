@@ -5,12 +5,29 @@ globalThis.PrintySource = (() => {
   const dates=new Map();
   function requirements(value){
     // Only explicit sliced-file labels. Never infer requirements from filenames or AMS contents.
-    const text=String(value||'');
-    const material=text.match(/(?:^|\n)\s*(?:Filament type|Material|Sliced material)\s*:\s*([A-Za-z0-9 +_-]+)(?=\n|$)/im)?.[1]?.trim()||'';
-    const profile=text.match(/(?:^|\n)\s*(?:Printer profile|Sliced printer)\s*:\s*([^\n]+)/im)?.[1]?.trim()||'';
-    const nozzle=text.match(/(?:^|\n)\s*(?:Nozzle diameter|Sliced nozzle)\s*:\s*(\d+(?:\.\d+)?)\s*mm/im)?.[1]||'';
-    const plate=text.match(/(?:^|\n)\s*(?:Plate type|Build plate)\s*:\s*([^\n]+)/im)?.[1]?.trim()||'';
-    return {material,profile,nozzle,plate,source:'Explicit file metadata labels'};
+    const text=String(value||'').replace(/\u00a0/g,' ');
+    // Job Details renders the file requirement as "131.00g - TPU - 0.4mm".
+    // This is file metadata, distinct from the printer's loaded AMS materials.
+    const compact=text.match(/\b(\d+(?:\.\d+)?)\s*g\s*[-–—]\s*([A-Za-z][A-Za-z0-9 +_/-]*?)\s*[-–—]\s*(\d+(?:\.\d+)?)\s*mm\b/i);
+    const material=text.match(/(?:^|\n)\s*(?:Filament type|Material|Sliced material)(?:[ \t]*:[ \t]*|[ \t]*\n[ \t]*)([A-Za-z0-9 +_/-]+)(?=\n|$)/im)?.[1]?.trim()||compact?.[2]?.trim()||'';
+    const profile=text.match(/(?:^|\n)\s*(?:Printer profile|Sliced printer)(?:[ \t]*:[ \t]*|[ \t]*\n[ \t]*)([^\n]+)/im)?.[1]?.trim()||'';
+    const nozzle=text.match(/(?:^|\n)\s*(?:Nozzle diameter|Sliced nozzle)(?:[ \t]*:[ \t]*|[ \t]*\n[ \t]*)(\d+(?:\.\d+)?)\s*mm/im)?.[1]||compact?.[3]||'';
+    const plate=text.match(/(?:^|\n)\s*(?:Plate type|Build plate)(?:[ \t]*:[ \t]*|[ \t]*\n[ \t]*)([^\n]+)/im)?.[1]?.trim()||'';
+    return {material,profile,nozzle,plate,filamentGrams:compact?Number(compact[1]):null,source:compact?'3DPrinterOS file details summary':'Explicit file metadata labels'};
+  }
+  function fileDialogs(name){
+    const nodes=[...document.querySelectorAll('#job-details-modal,[role="dialog"],[aria-modal="true"],dialog,.modal')]
+      .filter(n=>n.getClientRects().length&&(n.innerText||'').includes(name));
+    return nodes.filter(n=>!nodes.some(other=>other!==n&&n.contains(other)));
+  }
+  function fileText(dialog,name){
+    let value=dialog.innerText||'';
+    // Never interpret AMS entries or historical log messages as sliced requirements.
+    if(dialog.id==='job-details-modal'||/^Job Details\b/.test(value.trim())){
+      const start=value.indexOf(name);if(start<0)return '';
+      value=value.slice(start+name.length).split(/\[\d{1,2}:\d{2}\s+\d{2}\/\d{2}\/\d{4}\]/)[0];
+    }
+    return value.trim();
   }
   function slots(root) {
     const parent=root.querySelector('.filament-properties-parent');
@@ -57,5 +74,5 @@ globalThis.PrintySource = (() => {
       return Number.isFinite(ad)&&Number.isFinite(bd)?bd-ad:Number(b.id)-Number(a.id);
     })[0]||null;
   }
-  return {slots,badge,printers,duration,logJob,requirements};
+  return {slots,badge,printers,duration,logJob,requirements,fileDialogs,fileText};
 })();
