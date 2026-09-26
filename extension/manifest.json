@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Printy \u2014 3DPrinterOS Companion",
+  "version": "0.8.1",
+  "description": "Printer recommendations, AMS matching, job-log evidence and optional OpenAI suggestions.",
+  "permissions": [
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Farm Lights"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://cloud.3dprinteros.com/*"
+      ],
+      "js": [
+        "logic.js",
+        "source.js",
+        "job-details.js",
+        "log-reader.js",
+        "printer-grid.js",
+        "changes.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

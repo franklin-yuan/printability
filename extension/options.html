@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Printy · AI connection</title>
+<style>body{max-width:620px;margin:60px auto;padding:25px;font:16px system-ui;color:#193f32;background:#f4f8f5}h1{letter-spacing:-1px}p,li{line-height:1.7}label{display:block;margin:20px 0}input{display:block;box-sizing:border-box;width:100%;padding:12px;margin:8px 0;border:1px solid #bccfc2;border-radius:7px}button{padding:12px;border:0;border-radius:7px;background:#1b654b;color:white;cursor:pointer}code{user-select:all}#status{white-space:pre-wrap}</style>
+<h1>Connect OpenAI</h1><p>The local Printy helper holds your API key. This extension stores only a connection code.</p>
+<ol><li>Double-click <b>Start Printy.vbs</b> in the Printy helper folder.</li><li>Enter your OpenAI API key in that helper and save it.</li><li>Set the helper’s extension ID to <code id="extension-id"></code>.</li><li>Copy the helper’s connection code below.</li></ol>
+<label>Connection code <input id="token" type="password" autocomplete="off" spellcheck="false"></label>
+<button id="save">Save and test connection</button><p id="status" role="status"></p>
+<p>Printy collects available logs on the Printers page before AI summaries. Automatic major-change notifications send printer status, current/recent filenames, filament data and captured evidence to OpenAI, at most 20 automatic requests per day and five minutes apart. You can disable automatic notifications in Settings or request a manual summary. API usage is billed to your OpenAI account.</p>
+<script src="options.js"></script></html>
