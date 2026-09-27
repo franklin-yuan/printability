@@ -18,11 +18,31 @@ API_URL = 'https://api.x.ai/v1/realtime/client_secrets'
 PORT = 8765
 LOCK = threading.Lock()
 ANALYSIS_LOCK = threading.Lock()
-CONFIG = {'xai_key': '', 'extension_id': '', 'token': secrets.token_urlsafe(32)}
+CONFIG = {'xai_key': '', 'extension_id': '', 'token': secrets.token_urlsafe(32), 'booth_demo': False}
 CONFIG_PATH = Path(os.environ.get('LOCALAPPDATA', str(Path.home()))) / 'Printy' / 'connection.json' # Preserve existing connection settings
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hardware_bridge import HardwareBridge
 HARDWARE = HardwareBridge()
+
+# Public demo page may call loopback hardware only (never voice). Host stays 127.0.0.1.
+DEMO_ORIGIN_EXACT = {
+    'https://printability.tech',
+    'https://www.printability.tech',
+    'https://franklin-yuan.github.io',
+    'null',  # file://
+}
+DEMO_ORIGIN_RE = re.compile(
+    r'^https?://(127\.0\.0\.1|localhost)(:\d+)?$'
+    r'|^https://franklin-yuan\.github\.io$'
+)
+
+
+def is_demo_origin(origin):
+    if not origin:
+        return False
+    if origin in DEMO_ORIGIN_EXACT:
+        return True
+    return bool(DEMO_ORIGIN_RE.fullmatch(origin))
 
 
 def protect(value, decrypt=False):
@@ -46,7 +66,13 @@ def protect(value, decrypt=False):
 def load_config():
     if CONFIG_PATH.exists():
         saved = json.loads(protect(base64.b64decode(CONFIG_PATH.read_bytes()), True))
-        CONFIG.update({k: str(saved[k]) for k in CONFIG if k in saved})
+        for k in CONFIG:
+            if k not in saved:
+                continue
+            if k == 'booth_demo':
+                CONFIG[k] = bool(saved[k])
+            else:
+                CONFIG[k] = str(saved[k])
 
 
 def save_config():
@@ -74,44 +100,62 @@ def voice_token():
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_args): pass
+    def is_demo_request(self):
+        return is_demo_origin(self.headers.get('Origin'))
     def origin_allowed(self):
         origin=self.headers.get('Origin')
+        # Demo Origins may CORS to loopback; authorized() still requires token or booth bypass.
+        if self.is_demo_request():
+            return True
         with LOCK: eid=CONFIG['extension_id']
         return bool(re.fullmatch('[a-p]{32}',eid)) and (origin is None or origin==f'chrome-extension://{eid}')
+    def cors_headers(self):
+        origin=self.headers.get('Origin')
+        if self.origin_allowed() and origin:
+            self.send_header('Access-Control-Allow-Origin',origin)
+            self.send_header('Vary','Origin')
+            if self.headers.get('Access-Control-Request-Private-Network')=='true' or self.is_demo_request():
+                self.send_header('Access-Control-Allow-Private-Network','true')
     def reply(self, code, data):
         body=json.dumps(data).encode()
         self.send_response(code)
-        if self.origin_allowed() and self.headers.get('Origin'):
-            self.send_header('Access-Control-Allow-Origin',self.headers['Origin'])
-            self.send_header('Vary','Origin')
+        self.cors_headers()
         self.send_header('Content-Type','application/json')
         self.send_header('Cache-Control','no-store')
         self.send_header('Content-Length',str(len(body)))
         self.end_headers()
         self.wfile.write(body)
-    def authorized(self):
+    def authorized(self, *, allow_demo=False):
         if self.headers.get('Host')!=f'127.0.0.1:{PORT}' or not self.origin_allowed():
             self.reply(403,{'error':'Set the matching extension ID in the Printability helper.'});return False
-        with LOCK: expected=f"Bearer {CONFIG['token']}"
-        if not secrets.compare_digest(self.headers.get('Authorization',''),expected):
-            self.reply(401,{'error':'The connection code does not match. Copy it from the Printability helper.'});return False
+        if self.is_demo_request() and not allow_demo:
+            self.reply(403,{'error':'The demo page can only drive lights, not Printability Voice.'});return False
+        auth=self.headers.get('Authorization','')
+        with LOCK:
+            expected=f"Bearer {CONFIG['token']}"
+            booth=bool(CONFIG.get('booth_demo'))
+        if allow_demo and self.is_demo_request() and booth:
+            return True
+        if len(auth) != len(expected) or not secrets.compare_digest(auth, expected):
+            hint='Enable “Allow booth demo page” in the helper, or paste the connection code.' if self.is_demo_request() else 'The connection code does not match. Copy it from the Printability helper.'
+            self.reply(401,{'error':hint});return False
         return True
     def do_OPTIONS(self):
         if not self.headers.get('Origin') or not self.origin_allowed() or self.headers.get('Host')!=f'127.0.0.1:{PORT}':
             self.reply(403,{'error':'Origin not allowed'});return
         self.send_response(204)
-        self.send_header('Access-Control-Allow-Origin',self.headers['Origin'])
+        self.cors_headers()
         self.send_header('Access-Control-Allow-Headers','Authorization, Content-Type')
         self.send_header('Access-Control-Allow-Methods','GET, POST, OPTIONS')
         self.end_headers()
     def do_GET(self):
-        if not self.authorized():return
         if self.path!='/health':self.reply(404,{'error':'Not found'});return
-        with LOCK: configured=bool(CONFIG['xai_key'])
-        self.reply(200,{'configured':configured})
+        if not self.authorized(allow_demo=True):return
+        with LOCK: configured=bool(CONFIG['xai_key']); booth=bool(CONFIG.get('booth_demo'))
+        self.reply(200,{'configured':configured,'boothDemo':booth,'hardware':HARDWARE.snapshot()})
     def do_POST(self):
-        if not self.authorized():return
         if self.path=='/hardware':
+            if not self.authorized(allow_demo=True):return
             if self.headers.get_content_type()!='application/json':self.reply(415,{'error':'JSON required'});return
             try:
                 length=int(self.headers.get('Content-Length','0'))
@@ -121,6 +165,7 @@ class Handler(BaseHTTPRequestHandler):
             except (ValueError,TypeError):self.reply(400,{'error':'Invalid hardware request, or another Printability tab is controlling the lights.'})
             return
         if self.path!='/voice-token':self.reply(404,{'error':'Not found'});return
+        if not self.authorized(allow_demo=False):return
         if not ANALYSIS_LOCK.acquire(blocking=False):self.reply(429,{'error':'A voice connection is already being created.'});return
         try:self.reply(200,{'session':voice_token()})
         except ValueError as exc:self.reply(400,{'error':str(exc)})
@@ -155,6 +200,14 @@ def run_gui():
     def copy():
         root.clipboard_clear();root.clipboard_append(CONFIG['token']);status.set('Connection code copied. Paste it into Printability’s connection settings.')
     ttk.Button(frame,text='Copy connection code',command=copy).pack(anchor='w')
+    booth_var=tk.BooleanVar(value=bool(CONFIG.get('booth_demo')))
+    def toggle_booth():
+        with LOCK: CONFIG['booth_demo']=bool(booth_var.get())
+        try:save_config();status.set('Booth demo page allowed. Open printability.tech and use Lights — no token paste needed.' if booth_var.get() else 'Booth demo page blocked. Extension connection unchanged.')
+        except Exception:status.set('Booth setting applied for this session only.')
+    booth_row=ttk.Frame(frame);booth_row.pack(anchor='w',pady=(10,0),fill='x')
+    ttk.Checkbutton(booth_row,text='Allow booth demo page (printability.tech → local lights)',variable=booth_var,command=toggle_booth).pack(anchor='w')
+    ttk.Label(frame,text='When checked, the public demo may drive USB lights on this PC only. Voice tokens stay extension-only.',wraplength=550).pack(anchor='w',pady=(2,0))
     ttk.Label(frame,textvariable=status,wraplength=525).pack(anchor='w',pady=14)
     ttk.Label(frame,text='Hardware uses no paid API. Printability Voice uses your xAI API account while connected.\nStart voice explicitly; Stop disconnects it. No OpenAI calls.',wraplength=550).pack(anchor='w')
     ttk.Separator(frame).pack(fill='x',pady=12)

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Printability · Demo</title>
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <div class="demo-banner" role="note">
+    Demo with sample printers — not the live dashboard. No login or Chrome extension needed.
+  </div>
+
+  <header class="dash-chrome">
+    <div class="dash-brand">
+      <span class="dash-mark" aria-hidden="true"></span>
+      <div>
+        <strong>3DPrinterOS</strong>
+        <span class="dash-sub">Printers · sample farm</span>
+      </div>
+    </div>
+    <nav class="dash-nav" aria-label="Demo navigation">
+      <span class="dash-nav-active">Printers</span>
+      <span>Files</span>
+      <span>Queue</span>
+    </nav>
+  </header>
+
+  <div class="lights-bar" aria-label="Status lights">
+    <div class="lights-bar-main">
+      <span class="lights-label">Status lights</span>
+      <div id="status-lights" class="lights-row"></div>
+      <span class="lights-hint muted">Paper labels: Light 1–6 · green free · blue busy · amber paused · red down · purple offline · flashes when highlighted</span>
+    </div>
+    <div class="lights-connect" id="lights-connect">
+      <span class="lights-label">Lights</span>
+      <span id="lights-status" class="lights-status" role="status">Lights offline — on-screen demo still works</span>
+      <button type="button" id="lights-toggle" class="lights-btn">Connect lights</button>
+      <div id="lights-token-row" class="lights-token-row" hidden>
+        <label class="sr-only" for="lights-token">Helper connection code</label>
+        <input id="lights-token" type="password" placeholder="Paste helper connection code (optional if booth bypass is on)" autocomplete="off">
+        <button type="button" id="lights-save-token" class="lights-btn">Save &amp; retry</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="layout">
+    <section class="farm" aria-label="Printers">
+      <div class="farm-top">
+        <div>
+          <h1>Find a printer</h1>
+          <p class="muted">Material, wait, and your files — pick one for the floor.</p>
+        </div>
+      </div>
+      <div id="printer-grid" class="printer-grid"></div>
+    </section>
+
+    <aside id="printability-panel" class="panel" aria-label="Printability"></aside>
+  </main>
+
+  <div id="voice-shell" class="voice-shell" hidden>
+    <div class="voice-backdrop" data-close-voice></div>
+    <div class="voice-panel" role="dialog" aria-modal="true" aria-labelledby="voice-title">
+      <header class="voice-header">
+        <div>
+          <span class="eyebrow">PRINTABILITY · FIND A PRINTER</span>
+          <h2 id="voice-title">Printability Voice</h2>
+        </div>
+        <button type="button" class="voice-close secondary" data-close-voice>Close</button>
+      </header>
+
+      <section class="card">
+        <div id="voice-status" role="status">Voice is off</div>
+        <div class="controls">
+          <button type="button" id="voice-start">Start Printability Voice</button>
+          <button type="button" id="voice-stop" class="secondary" disabled>Stop</button>
+        </div>
+        <p class="small">Scripted demo — no live voice connection. Pick a suggestion or type a short request.</p>
+        <div class="suggestions" id="suggestions">
+          <button type="button" class="chip" data-prompt="I need blue PLA">I need blue PLA</button>
+          <button type="button" class="chip" data-prompt="What's free right now?">What's free right now?</button>
+          <button type="button" class="chip" data-prompt="I want to print bracket_v3.3mf">I want to print bracket_v3.3mf</button>
+        </div>
+        <form id="prompt-form" class="prompt-form">
+          <label class="sr-only" for="prompt-input">Your request</label>
+          <input id="prompt-input" type="text" placeholder="Try: I need blue PLA" autocomplete="off">
+          <button type="submit" id="prompt-send" disabled>Send</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div id="transcript" aria-live="polite"></div>
+        <div id="voice-actions" class="voice-actions" hidden></div>
+      </section>
+    </div>
+  </div>
+
+  <dialog class="card review-dialog" id="proposal">
+    <h2>Review this print</h2>
+    <div id="selection" class="review-hero"></div>
+    <p id="review-alerts" class="review-alerts" hidden></p>
+    <ul id="review-checks" class="review-checks"></ul>
+    <p class="review-note"><b>Review only</b> — this app cannot start a print. When you are ready, start from the printer dashboard.</p>
+    <div class="controls">
+      <button type="button" id="review-open">Open model / details</button>
+      <button type="button" id="review-refresh" class="secondary">Refresh info</button>
+    </div>
+    <p id="review-status" role="status"></p>
+    <details>
+      <summary>More detail</summary>
+      <dl id="review-details"></dl>
+    </details>
+    <h2>At the printer</h2>
+    <div id="preflight"></div>
+    <label><input id="clear" type="checkbox"> I checked: bed clear, plate installed, printer ready.</label>
+    <button type="button" disabled>Print disabled</button>
+    <button type="button" id="cancel" class="secondary">Close review</button>
+  </dialog>
+
+  <script src="../extension/logic.js"></script>
+  <script src="demo.js"></script>
+</body>
+</html>

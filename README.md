@@ -1,5 +1,37 @@
 # Printy — quick start (v0.9.1)
 
+## Try it out
+
+**Live demo:** [https://printability.tech](https://printability.tech) (also [https://franklin-yuan.github.io/printability/](https://franklin-yuan.github.io/printability/))
+
+Open the page on the booth laptop, click **Connect lights**, and drive the USB status lights while the on-screen printers simulate the farm. No Chrome extension or login required for the demo path.
+
+### DNS for printability.tech (MLH .tech portal)
+
+If the custom domain is not live yet, paste these records in the MLH /.tech DNS settings, then set the GitHub Pages custom domain to `printability.tech`:
+
+| Type | Host / name | Value |
+|------|-------------|--------|
+| **A** | `@` (apex) | `185.199.108.153` |
+| **A** | `@` | `185.199.109.153` |
+| **A** | `@` | `185.199.110.153` |
+| **A** | `@` | `185.199.111.153` |
+| **CNAME** | `www` | `franklin-yuan.github.io` |
+
+Fallback while DNS propagates: use the `github.io` URL above.
+
+### Booth: demo + real lights
+
+1. Plug in the ESP32-S3 USB gateway; power the C3 modules / LED strips.
+2. Double-click `helper/Start Printability.vbs` (keep the helper open).
+3. In the helper: **Refresh ports** → select the S3 COM port → **Connect**.
+4. Check **Allow booth demo page (printability.tech → local lights)** for a no-token booth setup. (Or leave it unchecked and paste the helper connection code into the demo’s Lights panel once.)
+5. Open [https://printability.tech](https://printability.tech) (or the `github.io` URL) **on that same laptop**.
+6. Click **Connect lights**. Label table papers **Light 1 · Crane** … **Light 6 · Wren**.
+7. Use scripted Voice, **Show printer** / **Flash**, or the per-card state buttons to change colors. Print stays disabled.
+
+If the helper is closed, the on-screen demo still works and says lights are offline.
+
 ## Wireless lights and physical switches
 
 Switch setup: click Set up module 1 in Settings, then flip its switch. Repeat for each LED-chain position, then choose the printer for each number. Restart the helper and reload the extension after updating.
@@ -39,7 +71,9 @@ When automatic major-change notifications are enabled, Printy watches loaded pri
 
 ## Try the interface immediately
 
-The extension operates on the authenticated 3DPrinterOS Printers page. There is no demo mode.
+**Judges / expo:** use [https://printability.tech](https://printability.tech) — see **Try it out** at the top of this README.
+
+The Chrome extension still operates on the authenticated 3DPrinterOS Printers page for the full product path.
 
 1. Select PLA + Blue in Overview.
 2. Open Settings, expand Crane and mark it BROKEN locally.
