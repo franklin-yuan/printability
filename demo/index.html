@@ -10,25 +10,26 @@
   <link rel="stylesheet" href="demo.css">
 </head>
 <body>
-  <details class="booth-tools">
-    <summary>Booth tools <span class="muted">lights &amp; simulate — optional</span></summary>
-    <div class="lights-bar" aria-label="Status lights">
-      <div class="lights-bar-main">
-        <span class="lights-label">Status lights</span>
-        <div id="status-lights" class="lights-row"></div>
-        <span class="lights-hint muted">Green free · blue busy · amber paused · red down</span>
-      </div>
-      <div class="lights-connect" id="lights-connect">
-        <span class="lights-label">Lights</span>
-        <span id="lights-status" class="lights-status" role="status">Lights offline — on-screen demo still works</span>
-        <button type="button" id="lights-toggle" class="lights-btn">Connect lights</button>
-        <div id="lights-token-row" class="lights-token-row" hidden>
-          <label class="sr-only" for="lights-token">Connection code</label>
-          <input id="lights-token" type="password" placeholder="Connection code (optional)" autocomplete="off">
-          <button type="button" id="lights-save-token" class="lights-btn">Save &amp; retry</button>
-        </div>
+  <div class="lights-bar lights-dock" aria-label="Status lights">
+    <div class="lights-bar-main">
+      <span class="lights-label">Status lights</span>
+      <div id="status-lights" class="lights-row"></div>
+      <span class="lights-hint muted">Green free · blue busy · amber paused · red down</span>
+    </div>
+    <div class="lights-connect" id="lights-connect">
+      <span class="lights-label">Lights</span>
+      <span id="lights-status" class="lights-status" role="status">Lights offline — on-screen demo still works</span>
+      <button type="button" id="lights-toggle" class="lights-btn">Connect lights</button>
+      <div id="lights-token-row" class="lights-token-row" hidden>
+        <label class="sr-only" for="lights-token">Connection code</label>
+        <input id="lights-token" type="password" placeholder="Connection code from the helper" autocomplete="off">
+        <button type="button" id="lights-save-token" class="lights-btn">Save &amp; retry</button>
       </div>
     </div>
+  </div>
+
+  <details class="booth-tools">
+    <summary>Simulate <span class="muted">optional</span></summary>
     <div class="judge-bar" aria-label="Simulate a print or an error">
       <div>
         <span class="lights-label">Simulate</span>
