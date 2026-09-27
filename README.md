@@ -2,9 +2,13 @@
 
 ## Try it out
 
-**Live demo:** [https://printability.tech](https://printability.tech) (also [https://franklin-yuan.github.io/printability/](https://franklin-yuan.github.io/printability/))
+**Live demo:** [https://printability.tech](https://printability.tech) (fallback [https://franklin-yuan.github.io/printability/](https://franklin-yuan.github.io/printability/))
 
 Open the page on the booth laptop, click **Connect lights**, and drive the USB status lights while the on-screen printers simulate the farm. No Chrome extension or login required for the demo path.
+
+### Enable GitHub Pages (one-time)
+
+Repo Settings → **Pages** → Build and deployment → Source: **GitHub Actions**. After the workflow on `main` succeeds, the `github.io` URL goes live. Then set Custom domain to `printability.tech` (the repo already has a `CNAME` file).
 
 ### DNS for printability.tech (MLH .tech portal)
 
