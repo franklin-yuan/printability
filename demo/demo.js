@@ -290,7 +290,6 @@
       const wait = FarmLightsLogic.waitEstimate(row, COLLECTION);
       const card = el('article', undefined, 'printer-card');
       card.dataset.printerId = row.id;
-      card.style.borderTop = `4px solid ${TONES[info.kind]}`;
       if (selectedPrinter === String(row.id)) {
         card.classList.add('selected');
         card.prepend(el('div', 'Selected for your print', 'selection-label'));
@@ -299,84 +298,96 @@
       const heading = el('div', undefined, 'heading');
       const badge = el('span', info.label, 'status-badge');
       badge.style.color = TONES[info.kind];
-      badge.style.backgroundColor = TONES[info.kind] + '15';
-      const titleWrap = el('div');
-      titleWrap.append(el('h3', row.name));
-      titleWrap.append(el('span', `Light ${row.config.light} · ${row.name}`, 'light-tag'));
-      heading.append(titleWrap, badge);
+      badge.style.backgroundColor = TONES[info.kind] + '18';
+      heading.append(el('h3', row.name), badge);
       card.append(heading);
 
       const active = row.jobs.find(FarmLightsLogic.isCurrentJob);
       card.append(printerPlaceholder(
-        active ? 'Current model' :
-          row.state === 'idle' ? 'Ready for your print' :
-            row.state === 'finished' ? 'Ready to collect' : 'No preview'
+        active ? 'Printing now' :
+          row.state === 'idle' ? 'Ready' :
+            row.state === 'finished' ? 'Ready to collect' : ''
       ));
 
       const body = el('div', undefined, 'card-body');
       if (row.simNote) body.append(el('p', row.simNote, 'sim-note-line'));
-      if (wait.minutes !== null || row.config.broken || ['paused', 'offline', 'error', 'finished'].includes(row.state)) {
-        const waitBox = el('div', undefined, 'wait-box');
-        waitBox.style.borderColor = TONES[info.kind];
-        waitBox.append(
-          el('strong', wait.minutes === 0 ? 'Available now' : wait.minutes != null ? `~${wait.minutes} min wait` : info.label),
-          el('p', wait.note || info.hint, 'muted')
-        );
-        body.append(waitBox);
-      }
 
-      const slots = el('div', undefined, 'slots');
+      const facts = el('div', undefined, 'facts');
+      const waitText = wait.minutes === 0 ? 'Available now' : wait.minutes != null ? `~${wait.minutes} min` : info.label;
+      const waitDetail = [wait.note, info.hint].filter(Boolean).find((t) => t && t !== waitText) || '';
+      const waitFact = el('div', undefined, 'fact');
+      waitFact.append(el('span', 'Wait', 'fact-label'), el('span', waitDetail ? `${waitText} · ${waitDetail}` : waitText, 'fact-value'));
+      facts.append(waitFact);
+
+      const mat = el('div', undefined, 'slots');
       if (row.slotsKnown) {
-        row.slots.forEach((s) => {
-          const chip = el('span', undefined, 'slot');
-          const swatch = el('span', undefined, 'swatch');
-          swatch.style.backgroundColor = s.rgb;
-          chip.append(swatch, document.createTextNode(`${s.material} · ${s.color}`));
-          slots.append(chip);
-        });
+        if (row.slots.length) {
+          row.slots.forEach((s) => {
+            const chip = el('span', undefined, 'slot');
+            const swatch = el('span', undefined, 'swatch');
+            swatch.style.backgroundColor = s.rgb;
+            chip.append(swatch, document.createTextNode(`${s.material} · ${s.color}`));
+            mat.append(chip);
+          });
+        } else {
+          mat.append(el('span', 'None loaded', 'muted'));
+        }
       } else {
-        slots.append(el('span', 'Filament unavailable', 'muted'));
+        mat.append(el('span', 'Not read yet', 'muted'));
       }
-      body.append(slots);
+      const matFact = el('div', undefined, 'fact');
+      matFact.append(el('span', 'Material', 'fact-label'), mat);
+      facts.append(matFact);
 
-      const current = el('div', undefined, 'current');
-      current.append(el('div', active?.name || (row.state === 'idle' ? 'No active print' : 'Current job details unavailable'), 'filename'));
+      let jobLine = active?.name || (row.state === 'idle' ? 'None' : 'Not shown');
       if (active) {
-        current.append(el('p',
-          row.state === 'printing' && row.minutes != null ? `About ${row.minutes} min left + collection` :
-            row.state === 'paused' ? 'Paused · wait unknown' :
-              row.state === 'finished' ? 'Waiting for collection · bed may still be full' :
-                'Remaining time not shown yet',
-          'muted'));
+        const time = row.state === 'printing' && row.minutes != null ? ` · ~${row.minutes} min left`
+          : row.state === 'paused' ? ' · paused'
+            : row.state === 'finished' ? ' · ready to collect' : '';
+        jobLine = active.name + time;
       }
-      body.append(current);
+      const jobFact = el('div', undefined, 'fact');
+      jobFact.append(el('span', 'Job', 'fact-label'), el('span', jobLine, 'fact-value'));
+      facts.append(jobFact);
+      body.append(facts);
+
+      if (row.config.light) {
+        body.append(el('p', `Floor light ${row.config.light}`, 'light-tag'));
+      }
+
+      const actions = el('div', undefined, 'card-actions');
+      actions.append(button('Find printer', () => highlightPrinter(row), 'btn-find'));
+      body.append(actions);
 
       if (row.jobs.length) {
         const files = el('details');
-        files.append(el('summary', `Your files (${row.jobs.length})`));
+        files.append(el('summary', `Files on this printer (${row.jobs.length})`));
         row.jobs.forEach((j) => {
           const line = el('div', undefined, 'job');
-          line.style.cssText = 'padding:8px 0;border-top:1px solid #edf1ee';
-          line.append(el('div', j.name, 'filename'), el('p', `${j.state}${j.estimatedMinutes != null ? ' · ' + j.estimatedMinutes + ' min total' : ''}`, 'muted'));
+          line.append(
+            el('div', j.name, 'filename'),
+            el('p', `${j.state}${j.estimatedMinutes != null ? ' · ' + j.estimatedMinutes + ' min' : ''}`, 'muted')
+          );
           files.append(line);
         });
         body.append(files);
       }
 
-      card.append(body);
-
-      const simLabels = {idle:'Ready', printing:'Printing', paused:'Paused', error:'Error', offline:'Offline', finished:'Done'};
-      const sim = el('div', undefined, 'sim-row');
-      sim.setAttribute('aria-label', `Simulate ${row.name} state`);
+      const sim = el('details', undefined, 'sim-details');
+      sim.append(el('summary', 'Simulate state'));
+      const simRow = el('div', undefined, 'sim-row');
+      simRow.setAttribute('aria-label', `Simulate ${row.name} state`);
+      const simLabels = { idle: 'Ready', printing: 'Printing', paused: 'Paused', error: 'Error', offline: 'Offline', finished: 'Done' };
       CYCLE_STATES.forEach((state) => {
         const b = button(simLabels[state], () => setPrinterState(row, state));
         b.setAttribute('aria-pressed', String(row.state === state || (state === 'error' && row.config.broken)));
-        sim.append(b);
+        simRow.append(b);
       });
-      sim.append(button('Cycle', () => cyclePrinterState(row)));
-      sim.append(button('Flash', () => highlightPrinter(row)));
+      simRow.append(button('Cycle', () => cyclePrinterState(row)));
+      sim.append(simRow);
       body.append(sim);
 
+      card.append(body);
       grid.append(card);
     });
   }
@@ -404,16 +415,18 @@
     return l;
   }
 
-  function voiceButton(label = 'Printability Voice') {
+  function voiceButton(label = 'Ask Printability', hint = 'Tell it what you want to print') {
+    const wrap = el('div', undefined, 'voice-cta');
     const b = button('', openVoice, 'voice-launch');
     const mark = el('span', undefined, 'mark');
     mark.setAttribute('aria-hidden', 'true');
     for (let i = 0; i < 4; i++) mark.append(el('i'));
     const copy = el('span', undefined, 'copy');
-    copy.append(el('small', 'Voice'), el('strong', label));
+    copy.append(el('strong', label), el('small', hint, 'hint'));
     b.append(mark, copy);
-    b.setAttribute('aria-label', 'Talk to Printability Voice');
-    return b;
+    b.setAttribute('aria-label', 'Ask Printability with Grok Voice — tell it what you want to print');
+    wrap.append(b, el('p', 'Voice by Grok', 'voice-by'));
+    return wrap;
   }
 
   function renderPanel() {
@@ -430,11 +443,11 @@
 
     const tabs = el('nav', undefined, 'tabs');
     tabs.setAttribute('role', 'tablist');
-    Object.entries({ overview: 'Find', match: 'Matching', settings: 'Settings' }).forEach(([v, label]) => {
+    Object.entries({ overview: 'Start', match: 'Browse', settings: 'More' }).forEach(([v, label]) => {
       const b = button(label, () => { view = v; renderPanel(); });
       b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(view === v));
-      b.title = v === 'overview' ? 'Find a printer' : v === 'match' ? 'Matching printers' : 'Settings';
+      b.title = v === 'overview' ? 'Start with Voice' : v === 'match' ? 'Browse matching printers' : 'Settings';
       tabs.append(b);
     });
     panel.append(tabs);
@@ -451,20 +464,24 @@
 
   function renderStart(body) {
     body.classList.add('start-view');
-    body.append(el('h3', 'Find a printer'));
-    body.append(el('p', 'Pick material and color to see the soonest opening.', 'muted'));
+    body.append(el('p', 'Start here', 'start-cue'));
+    body.append(voiceButton());
+
+    const guide = el('div', undefined, 'guide-block');
+    guide.append(el('h3', 'Or pick by material'));
+    guide.append(el('p', 'Filter the farm, then show the soonest match.', 'muted'));
 
     const fields = el('div', undefined, 'fields');
     fields.append(
       selectField('Material', MATERIALS, material, (v) => { material = v; renderPanel(); }),
       selectField('Color', COLORS, color, (v) => { color = v; renderPanel(); })
     );
-    body.append(fields);
+    guide.append(fields);
 
     const { next, unknown } = FarmLightsLogic.nextPrinter(printers, material, color, COLLECTION);
     const box = el('section', undefined, 'wait-card');
     box.setAttribute('aria-label', 'Next printer wait');
-    box.append(el('div', 'Next opening', 'eyebrow'));
+    box.append(el('div', 'Soonest match', 'eyebrow'));
 
     const value = el('div', next ? (next.minutes === 0 ? 'Ready now' : `~${next.minutes} min`) : 'Unknown', 'wait-value');
     box.append(value);
@@ -475,29 +492,25 @@
         el('h3', r.name),
         el('p', next.minutes === 0
           ? 'Confirm the bed is clear before you print.'
-          : `Soonest match, including ${COLLECTION} min to collect.`, 'muted')
+          : `Includes about ${COLLECTION} min to collect a finished part.`, 'muted')
       );
       if (unknown && next.minutes > 0) {
-        box.append(el('p', 'Some matches have no time estimate and might free up sooner.', 'muted'));
+        box.append(el('p', 'Some printers have no wait estimate and might free up sooner.', 'muted'));
       }
       box.append(button('Show printer', () => highlightPrinter(r), 'btn-primary'));
     } else {
-      box.append(el('p', 'No matching printer has a reliable wait yet. Check Matching, or ask Voice.', 'muted'));
+      box.append(el('p', 'No match yet — try Voice, or change material/color.', 'muted'));
     }
-    body.append(box);
-    body.append(voiceButton());
-
-    const available = printers.filter((r) => !r.config.broken && r.state === 'idle').length;
-    const out = printers.filter((r) => r.config.broken || ['error', 'offline'].includes(r.state)).length;
-    body.append(el('p', `${printers.length} printers · ${available} free · ${out} unavailable`, 'muted'));
+    guide.append(box);
+    body.append(guide);
 
     const matchCount = FarmLightsLogic.matchingPrinters(printers, material, color, COLLECTION).length;
-    body.append(button(
-      matchCount ? `See ${matchCount} matching printer${matchCount === 1 ? '' : 's'}` : 'Browse matching printers',
+    const browse = button(
+      matchCount ? `Browse ${matchCount} matching` : 'Browse printers',
       () => { view = 'match'; renderPanel(); },
-      'btn-secondary'
-    ));
-    body.append(el('p', 'Floor lights: green free, blue busy, amber paused, red unavailable, purple offline. Ask Voice or Flash to highlight yours. Label papers Light 1 · Crane … Light 6 · Wren.', 'muted'));
+      'quiet-link'
+    );
+    body.append(browse);
   }
 
   function renderMatch(body) {
@@ -505,7 +518,7 @@
     body.append(el('p',
       material || color
         ? `Filtered for ${[material, color].filter(Boolean).join(' · ')}.`
-        : 'Showing all printers. Set material or color under Find.',
+        : 'Showing all printers. Set material or color under Start.',
       'muted'));
 
     const fields = el('div', undefined, 'fields');
@@ -514,7 +527,7 @@
       selectField('Color', COLORS, color, (v) => { color = v; renderPanel(); })
     );
     body.append(fields);
-    body.append(voiceButton('Ask Voice for help'));
+    body.append(voiceButton('Ask Printability', 'Describe what you need'));
 
     const matches = FarmLightsLogic.matchingPrinters(printers, material, color, COLLECTION);
     if (!matches.length) {
@@ -536,28 +549,30 @@
   }
 
   function renderSettings(body) {
-    body.append(el('h3', 'Settings'));
-    body.append(el('p', 'Wait timing and floor lights for finding printers.', 'muted'));
+    body.append(el('h3', 'More'));
+    body.append(el('p', 'Optional booth settings.', 'muted'));
     body.append(el('h4', 'Wait estimates'));
     body.append(el('p', `Collection buffer: ${COLLECTION} min (demo fixed).`, 'muted'));
     body.append(el('h4', 'Status lights'));
-    body.append(el('p', 'Label papers on the table to match these modules. Lights sit next to each paper.', 'muted'));
+    body.append(el('p', 'Paper labels on the table match these lights.', 'muted'));
     printers.forEach((r) => {
       body.append(el('p', `Light ${r.config.light} · ${r.name}`, 'good'));
     });
     body.append(el('p', lightsMessage, lightsOnline ? 'good' : 'muted'));
-    body.append(el('h4', 'Printers'));
-    body.append(el('p', 'Loaded AMS filament is preferred. Use Cycle on a card to simulate idle / printing / paused / down.', 'muted'));
+    const printersDetails = el('details');
+    printersDetails.append(el('summary', 'Printer details'));
+    printersDetails.append(el('p', 'Use Cycle on a card to simulate idle / printing / paused / down.', 'muted'));
     printers.forEach((r) => {
       const d = el('details');
       d.append(el('summary', `${r.name} · Light ${r.config.light}`));
-      const slotText = r.slotsKnown
-        ? r.slots.map((s) => `Slot ${s.slot}: ${s.material} · ${s.color}`).join('; ')
+      const mats = r.slotsKnown
+        ? [...new Set(r.slots.map((s) => `${s.material} · ${s.color}`))].join('; ')
         : 'Filament unavailable';
-      d.append(el('p', slotText, 'muted'));
+      d.append(el('p', mats, 'muted'));
       d.append(el('p', `State: ${r.state}`, 'muted'));
-      body.append(d);
+      printersDetails.append(d);
     });
+    body.append(printersDetails);
   }
 
   /* —— Voice (live via localhost helper, scripted chips as fallback) —— */
@@ -601,7 +616,7 @@
   }
 
   function closeVoice() {
-    void stopVoice('Voice is off');
+    void stopVoice('Ready when you are');
     $('voice-shell').hidden = true;
     document.body.style.overflow = '';
   }
@@ -1040,10 +1055,10 @@ registerProcessor('printy-mic',PrintyMic);`;
     $('prompt-send').disabled = false;
     $('voice-talk').hidden = true;
     $('prompt-input').placeholder = 'Try: I need blue PLA';
-    setVoiceModeNote('Live voice offline, showing a sample. Pick a suggestion or type a short request.');
-    setVoiceStatus('Listening · sample demo', true);
-    if (reason) line('Printability Voice', 'Live voice offline, showing a sample. ' + reason);
-    else line('Printability Voice', 'Live voice offline, showing a sample. Hi — I can help you find a free printer. Try “I need blue PLA”.');
+    setVoiceModeNote('Sample mode — type a request or open Ideas to try.');
+    setVoiceStatus('Ready · sample demo', true);
+    if (reason) line('Printability Voice', 'Live voice is offline here — try typing “I need blue PLA”.');
+    else line('Printability Voice', 'Hi — I can help you find a free printer. Try “I need blue PLA”.');
   }
 
   async function startVoice() {
@@ -1054,7 +1069,7 @@ registerProcessor('printy-mic',PrintyMic);`;
     $('voice-start').disabled = true;
     $('voice-stop').disabled = false;
     setVoiceStatus('Connecting to Printability Voice…', false);
-    setVoiceModeNote('Checking the local Printability helper for live voice…');
+    setVoiceModeNote('Starting voice…');
     try {
       await tryStartLiveVoice();
       if (current !== liveGeneration) return;
@@ -1096,7 +1111,7 @@ registerProcessor('printy-mic',PrintyMic);`;
     }
   }
 
-  async function stopVoice(note = 'Voice is off') {
+  async function stopVoice(note = 'Ready when you are') {
     liveGeneration++;
     voiceLive = false;
     voiceMode = 'off';
@@ -1106,8 +1121,8 @@ registerProcessor('printy-mic',PrintyMic);`;
     $('voice-start').disabled = false;
     $('voice-stop').disabled = true;
     $('prompt-send').disabled = true;
-    $('prompt-input').placeholder = 'Try: I need blue PLA';
-    setVoiceModeNote('Start uses live Printability Voice, the same Grok voice session as the extension, when this computer’s helper allows the booth demo. Printing stays disabled.');
+    $('prompt-input').placeholder = 'Or type: I need blue PLA';
+    setVoiceModeNote('Speak naturally. Printing stays disabled in this demo.');
     setVoiceStatus(note, false);
   }
 
@@ -1346,6 +1361,10 @@ registerProcessor('printy-mic',PrintyMic);`;
   }
 
   /* —— Wire up —— */
+  $('hero-voice').onclick = () => {
+    openVoice();
+    void startVoice();
+  };
   document.querySelectorAll('[data-close-voice]').forEach((n) => {
     n.addEventListener('click', closeVoice);
   });
@@ -1403,7 +1422,7 @@ registerProcessor('printy-mic',PrintyMic);`;
       narrate(`Filament error on ${row.name}. ${light} should turn amber, and the card explains why.`);
     } else if (kind === 'down') {
       setPrinterState(row, 'error', `${row.name} is down. Printability will skip it.`);
-      narrate(`${row.name} is down. ${light} should turn red, and Find a printer will not offer it.`);
+      narrate(`${row.name} is down. ${light} should turn red, and Start will not offer it.`);
     } else if (kind === 'done') {
       setPrinterState(row, 'finished', `Print finished on ${row.name}. Collect it and clear the bed.`);
       narrate(`${row.name} finished. ${light} should turn green. The bed may still be full.`);

@@ -4,73 +4,78 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Printability · Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="demo.css">
 </head>
 <body>
   <div class="demo-banner" role="note">
-    Demo with sample printers — not the live dashboard. No login or Chrome extension needed.
+    Sample printers — no login or Chrome extension needed.
   </div>
 
-  <header class="dash-chrome">
-    <div class="dash-brand">
-      <span class="dash-mark" aria-hidden="true"></span>
+  <section class="start-here" aria-label="Start here">
+    <p class="start-here-cue">Start here</p>
+    <h1>Printability</h1>
+    <p class="start-here-lead">Tell it what you want to print — material, color, or a file name.</p>
+    <div class="hero-voice-wrap">
+      <button type="button" id="hero-voice" class="hero-voice">
+        <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="copy">
+          <strong>Ask Printability</strong>
+          <small>One click to start</small>
+        </span>
+      </button>
+      <p class="voice-by">Voice by Grok</p>
+    </div>
+  </section>
+
+  <details class="booth-tools">
+    <summary>Booth tools <span class="muted">lights &amp; simulate — optional</span></summary>
+    <div class="lights-bar" aria-label="Status lights">
+      <div class="lights-bar-main">
+        <span class="lights-label">Status lights</span>
+        <div id="status-lights" class="lights-row"></div>
+        <span class="lights-hint muted">Green free · blue busy · amber paused · red down</span>
+      </div>
+      <div class="lights-connect" id="lights-connect">
+        <span class="lights-label">Lights</span>
+        <span id="lights-status" class="lights-status" role="status">Lights offline — on-screen demo still works</span>
+        <button type="button" id="lights-toggle" class="lights-btn">Connect lights</button>
+        <div id="lights-token-row" class="lights-token-row" hidden>
+          <label class="sr-only" for="lights-token">Connection code</label>
+          <input id="lights-token" type="password" placeholder="Connection code (optional)" autocomplete="off">
+          <button type="button" id="lights-save-token" class="lights-btn">Save &amp; retry</button>
+        </div>
+      </div>
+    </div>
+    <div class="judge-bar" aria-label="Simulate a print or an error">
       <div>
-        <strong>3DPrinterOS</strong>
-        <span class="dash-sub">Printers · sample farm</span>
+        <span class="lights-label">Simulate</span>
+        <p id="sim-note" class="muted">Acts on the highlighted printer, or Crane if none is selected.</p>
+      </div>
+      <div class="judge-actions">
+        <button type="button" id="sim-print" class="lights-btn">Demo print</button>
+        <button type="button" id="sim-pause" class="lights-btn secondary">Pause</button>
+        <button type="button" id="sim-error" class="lights-btn secondary">Filament error</button>
+        <button type="button" id="sim-down" class="lights-btn secondary">Printer down</button>
+        <button type="button" id="sim-done" class="lights-btn secondary">Finished</button>
+        <button type="button" id="sim-ready" class="lights-btn secondary">Ready again</button>
       </div>
     </div>
-    <nav class="dash-nav" aria-label="Demo navigation">
-      <span class="dash-nav-active">Printers</span>
-      <span>Files</span>
-      <span>Queue</span>
-    </nav>
-  </header>
-
-  <div class="lights-bar" aria-label="Status lights">
-    <div class="lights-bar-main">
-      <span class="lights-label">Status lights</span>
-      <div id="status-lights" class="lights-row"></div>
-      <span class="lights-hint muted">Paper labels: Light 1–6 · green free · blue busy · amber paused · red down · purple offline · flashes when highlighted</span>
-    </div>
-    <div class="lights-connect" id="lights-connect">
-      <span class="lights-label">Lights</span>
-      <span id="lights-status" class="lights-status" role="status">Lights offline — on-screen demo still works</span>
-      <button type="button" id="lights-toggle" class="lights-btn">Connect lights</button>
-      <div id="lights-token-row" class="lights-token-row" hidden>
-        <label class="sr-only" for="lights-token">Helper connection code</label>
-        <input id="lights-token" type="password" placeholder="Paste helper connection code (optional if booth bypass is on)" autocomplete="off">
-        <button type="button" id="lights-save-token" class="lights-btn">Save &amp; retry</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="judge-bar" aria-label="Simulate a print or an error">
-    <div>
-      <span class="lights-label">Simulate for judges</span>
-      <p id="sim-note" class="muted">Acts on the highlighted printer, or Crane if none is selected. The matching light follows.</p>
-    </div>
-    <div class="judge-actions">
-      <button type="button" id="sim-print" class="lights-btn">Start a demo print</button>
-      <button type="button" id="sim-pause" class="lights-btn secondary">Pause it</button>
-      <button type="button" id="sim-error" class="lights-btn secondary">Filament error</button>
-      <button type="button" id="sim-down" class="lights-btn secondary">Printer down</button>
-      <button type="button" id="sim-done" class="lights-btn secondary">Print finished</button>
-      <button type="button" id="sim-ready" class="lights-btn secondary">Back to ready</button>
-    </div>
-  </div>
+  </details>
 
   <main class="layout">
+    <aside id="printability-panel" class="panel" aria-label="Printability"></aside>
     <section class="farm" aria-label="Printers">
       <div class="farm-top">
         <div>
-          <h1>Find a printer</h1>
-          <p class="muted">Material, wait, and your files — pick one for the floor.</p>
+          <h2>Printers</h2>
+          <p class="muted">Browse the farm — status, wait, material, and file at a glance.</p>
         </div>
       </div>
       <div id="printer-grid" class="printer-grid"></div>
     </section>
-
-    <aside id="printability-panel" class="panel" aria-label="Printability"></aside>
   </main>
 
   <div id="voice-shell" class="voice-shell" hidden>
@@ -78,28 +83,33 @@
     <div class="voice-panel" role="dialog" aria-modal="true" aria-labelledby="voice-title">
       <header class="voice-header">
         <div>
-          <span class="eyebrow">PRINTABILITY · FIND A PRINTER</span>
-          <h2 id="voice-title">Printability Voice</h2>
+          <span class="eyebrow">Printability</span>
+          <h2 id="voice-title">Ask with voice</h2>
+          <p class="voice-by">Voice by Grok</p>
+          <p class="voice-lead muted">Tell it what you want to print.</p>
         </div>
         <button type="button" class="voice-close secondary" data-close-voice>Close</button>
       </header>
 
       <section class="card">
-        <div id="voice-status" role="status">Voice is off</div>
+        <div id="voice-status" role="status">Ready when you are</div>
         <div class="controls">
-          <button type="button" id="voice-start">Start Printability Voice</button>
+          <button type="button" id="voice-start">Start listening</button>
           <button type="button" id="voice-stop" class="secondary" disabled>Stop</button>
           <button type="button" id="voice-talk" class="secondary" disabled hidden>Mute microphone</button>
         </div>
-        <p id="voice-mode-note" class="small">Start uses live Printability Voice, the same Grok voice session as the extension, when this computer’s helper allows the booth demo. Printing stays disabled.</p>
-        <div class="suggestions" id="suggestions">
-          <button type="button" class="chip" data-prompt="I need blue PLA">I need blue PLA</button>
-          <button type="button" class="chip" data-prompt="What's free right now?">What's free right now?</button>
-          <button type="button" class="chip" data-prompt="I want to print bracket_v3.3mf">I want to print bracket_v3.3mf</button>
-        </div>
+        <p id="voice-mode-note" class="small">Speak naturally. Printing stays disabled in this demo.</p>
+        <details class="try-saying">
+          <summary>Ideas to try</summary>
+          <div class="suggestions" id="suggestions">
+            <button type="button" class="chip" data-prompt="I need blue PLA">I need blue PLA</button>
+            <button type="button" class="chip" data-prompt="What's free right now?">What's free right now?</button>
+            <button type="button" class="chip" data-prompt="I want to print bracket_v3.3mf">I want to print bracket_v3.3mf</button>
+          </div>
+        </details>
         <form id="prompt-form" class="prompt-form">
           <label class="sr-only" for="prompt-input">Your request</label>
-          <input id="prompt-input" type="text" placeholder="Try: I need blue PLA" autocomplete="off">
+          <input id="prompt-input" type="text" placeholder="Or type: I need blue PLA" autocomplete="off">
           <button type="submit" id="prompt-send" disabled>Send</button>
         </form>
       </section>

@@ -60,27 +60,27 @@ globalThis.FarmLightsLogic = (() => {
   // Simple dashboard status for lights and cards — no log-based fault triage.
   function statusInfo(row) {
     const make=(kind,label,hint)=>({kind,label,hint});
-    if(row.config?.broken||row.broken)return make('broken','Out of service','This printer is marked down. Pick another.');
-    if(row.ambiguous)return make('unknown','Name unclear','More than one printer shares this name.');
-    if(row.state==='error')return make('error','Unavailable','Dashboard shows an error — try another printer.');
-    if(row.state==='paused')return make('paused','Paused','Not a reliable wait estimate right now.');
-    if(row.state==='offline')return make('offline','Disconnected','Not reachable from the dashboard.');
-    if(row.state==='unknown')return make('unknown','Status unknown','Check the dashboard connection.');
-    if(row.state==='finished')return make('finished','Ready to collect','Someone may still need to clear the bed.');
-    if(row.state==='idle')return make('idle','Available','Confirm the bed is clear before starting.');
-    if(row.state==='printing')return make('working','Printing','In use — see the wait estimate if available.');
-    if(row.state==='heating')return make('working','Heating','Warming up for a print.');
-    if(row.state==='preparing')return make('working','Preparing','Getting ready to print.');
-    return make('working',row.state||'Busy','In use.');
+    if(row.config?.broken||row.broken)return make('broken','Unavailable','');
+    if(row.ambiguous)return make('unknown','Name unclear','');
+    if(row.state==='error')return make('error','Unavailable','');
+    if(row.state==='paused')return make('paused','Paused','');
+    if(row.state==='offline')return make('offline','Offline','');
+    if(row.state==='unknown')return make('unknown','Unknown','');
+    if(row.state==='finished')return make('finished','Ready to collect','');
+    if(row.state==='idle')return make('idle','Available','');
+    if(row.state==='printing')return make('working','Printing','');
+    if(row.state==='heating')return make('working','Heating','');
+    if(row.state==='preparing')return make('working','Preparing','');
+    return make('working',row.state||'Busy','');
   }
   // Back-compat for callers that still expect triage().
   function triage(row){const info=statusInfo(row);return {...info,rank:0,priority:'low',action:info.hint,reason:info.label};}
   function waitEstimate(row,buffer=5){
-    if(row.config?.broken||row.broken||row.ambiguous)return {minutes:null,label:'Unavailable · out of service'};
-    if(row.state==='idle'&&!(row.jobs||[]).some(isCurrentJob))return {minutes:0,label:'Available now · confirm bed is clear'};
-    if(row.state==='printing'&&Number.isFinite(row.minutes)&&row.minutes>=0){const minutes=Math.ceil(row.minutes)+Math.max(0,Number(buffer)||0);return {minutes,label:`~${minutes} min until free`,note:`${Math.ceil(row.minutes)} min reported left + ${Math.max(0,Number(buffer)||0)} min to collect. Not a reservation.`};}
-    if(row.state==='finished')return {minutes:null,label:'Waiting for collection · bed may still be full'};
-    return {minutes:null,label:'Wait unknown',note:'Remaining time is not shown on the dashboard yet.'};
+    if(row.config?.broken||row.broken||row.ambiguous)return {minutes:null,label:'Unavailable'};
+    if(row.state==='idle'&&!(row.jobs||[]).some(isCurrentJob))return {minutes:0,label:'Available now'};
+    if(['printing','heating','preparing'].includes(row.state)&&Number.isFinite(row.minutes)&&row.minutes>=0){const minutes=Math.ceil(row.minutes);return {minutes,label:minutes===0?'Almost done':`${minutes} min left`};}
+    if(row.state==='finished')return {minutes:null,label:'Ready to collect'};
+    return {minutes:null,label:'No time left shown'};
   }
   function nextPrinter(rows,material,color,buffer=5){
     const candidates=rows.filter(r=>!r.ambiguous&&!r.config?.broken&&!r.broken&&matchesFilament(r,material,color));
