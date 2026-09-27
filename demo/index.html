@@ -16,6 +16,15 @@
       <div id="status-lights" class="lights-row"></div>
       <span class="lights-hint muted">Green free · blue busy · amber paused · red down</span>
     </div>
+    <div class="effect-pick">
+      <div class="effect-row" role="group" aria-label="Light effect">
+        <button type="button" class="effect-btn" data-effect="1" aria-pressed="true">Pulse</button>
+        <button type="button" class="effect-btn" data-effect="2">Chase</button>
+        <button type="button" class="effect-btn" data-effect="3">Rainbow</button>
+        <button type="button" class="effect-btn" data-effect="4">Sparkle</button>
+        <button type="button" class="effect-btn" data-effect="0">Steady</button>
+      </div>
+    </div>
     <div class="lights-connect" id="lights-connect">
       <span class="lights-label">Lights</span>
       <span id="lights-status" class="lights-status" role="status">Lights offline — on-screen demo still works</span>
@@ -33,7 +42,7 @@
     <div class="judge-bar" aria-label="Simulate a print or an error">
       <div>
         <span class="lights-label">Simulate</span>
-        <p id="sim-note" class="muted">Acts on the highlighted printer, or Crane if none is selected.</p>
+        <p id="sim-note" class="muted">Acts on the selected light, or Crane if none is selected.</p>
       </div>
       <div class="judge-actions">
         <button type="button" id="sim-print" class="lights-btn">Demo print</button>
@@ -86,7 +95,7 @@
         <div class="controls">
           <button type="button" id="voice-start">Start listening</button>
           <button type="button" id="voice-stop" class="secondary" disabled>Stop</button>
-          <button type="button" id="voice-talk" class="secondary" disabled hidden>Mute microphone</button>
+          <button type="button" id="voice-talk" class="secondary" disabled hidden>Mic off</button>
         </div>
         <form id="voice-code-form" class="voice-code">
           <label for="voice-token">Connection code</label>
@@ -107,7 +116,7 @@
         <form id="prompt-form" class="prompt-form">
           <label class="sr-only" for="prompt-input">Your request</label>
           <input id="prompt-input" type="text" placeholder="Or type: I need blue PLA" autocomplete="off">
-          <button type="submit" id="prompt-send" disabled>Send</button>
+          <button type="submit" id="prompt-send">Send</button>
         </form>
       </section>
 
@@ -133,10 +142,6 @@
       <summary>More detail</summary>
       <dl id="review-details"></dl>
     </details>
-    <h2>At the printer</h2>
-    <div id="preflight"></div>
-    <label><input id="clear" type="checkbox"> I checked: bed clear, plate installed, printer ready.</label>
-    <button type="button" disabled>Print disabled</button>
     <button type="button" id="cancel" class="secondary">Close review</button>
   </dialog>
 

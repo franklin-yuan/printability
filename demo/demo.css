@@ -115,7 +115,37 @@ body {
   box-shadow: 0 2px 8px #0002;
   transition: background .2s ease, box-shadow .2s ease;
 }
-.light[data-flash="1"] { animation: light-flash .55s ease-in-out infinite; }
+.light[data-flash="1"] { animation: light-flash 1.1s ease-in-out infinite; }
+.led-strip { display: inline-flex; gap: 3px; align-items: center; }
+.led-strip[data-flash="1"],
+.led-strip[data-effect="1"] { animation: light-flash 1.1s ease-in-out infinite; }
+.led-strip[data-effect="2"] .led { animation: led-chase .72s linear infinite; }
+.led-strip[data-effect="3"] .led { animation: led-rainbow 2.4s linear infinite; }
+.led-strip[data-effect="4"] .led { animation: led-spark .85s ease-in-out infinite; }
+.led { width: 7px; height: 14px; border-radius: 2px; display: block; }
+.effect-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.effect-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.effect-btn {
+  border: 1px solid #cfd8e6;
+  background: #eef2f7;
+  color: #1a2736;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.effect-btn[aria-pressed="true"] {
+  background: #0e7c78;
+  border-color: #0e7c78;
+  color: #fff;
+}
 .light-chip {
   display: inline-flex;
   align-items: center;
@@ -124,9 +154,15 @@ body {
   border-radius: 999px;
   background: #fff;
   border: 1px solid var(--line);
+  font: inherit;
   font-size: 12px;
   font-weight: 650;
   color: var(--ink);
+  cursor: pointer;
+}
+button.light-chip[aria-pressed="true"] {
+  border-color: #0e7c78;
+  box-shadow: 0 0 0 3px #0e7c7844;
 }
 .light-chip .light { width: 16px; height: 16px; flex: none; }
 .lights-hint { margin-left: auto; }
@@ -206,7 +242,20 @@ body {
 }
 @keyframes light-flash {
   0%, 100% { filter: brightness(1); transform: scale(1); }
-  50% { filter: brightness(1.55); transform: scale(1.12); box-shadow: 0 0 0 6px #0e7c7833; }
+  50% { filter: brightness(1.55); transform: scale(1.08); box-shadow: 0 0 0 6px #0e7c7833; }
+}
+@keyframes led-chase {
+  0%, 16% { filter: brightness(1.85); transform: scaleY(1.28); }
+  28%, 100% { filter: brightness(.28); transform: scaleY(1); }
+}
+@keyframes led-rainbow {
+  from { filter: hue-rotate(0deg); }
+  to { filter: hue-rotate(360deg); }
+}
+@keyframes led-spark {
+  0%, 100% { opacity: .28; filter: brightness(.55); }
+  35% { opacity: 1; filter: brightness(1.7); }
+  55% { opacity: .22; }
 }
 
 .layout {
@@ -257,17 +306,6 @@ body {
   overflow: hidden;
   box-shadow: 0 6px 20px #15202b08;
   scroll-margin: 24px;
-}
-.printer-card.selected {
-  outline: 4px solid #0e7c78;
-  outline-offset: 4px;
-}
-.selection-label {
-  padding: 9px 16px;
-  background: #e7f3f2;
-  color: #0a5552;
-  font-weight: 700;
-  font-size: 13px;
 }
 .printer-card .heading {
   padding: 14px 16px 10px;
@@ -774,6 +812,7 @@ body:has(#voice-shell:not([hidden])) .panel { visibility: hidden; }
   overflow-wrap: anywhere;
 }
 .controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+#voice-talk[aria-pressed="true"] { background: #0e7c78; color: #fff; border-color: #0e7c78; }
 .voice-panel button {
   border: 0;
   border-radius: 12px;
@@ -1015,22 +1054,6 @@ dialog.review-dialog details summary {
 dialog.review-dialog dt { font-weight: 700; margin-top: 12px; }
 dialog.review-dialog dd { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 #review-status { min-height: 1.2em; font-size: 13px; color: var(--muted); margin: 6px 0 0; }
-#preflight .small { font-size: 12px; color: var(--muted); }
-#preflight .check-match,
-#preflight .check-manual { border-left: 4px solid #0e7c78; padding-left: 8px; }
-#preflight .check-mismatch { border-left: 4px solid #b42318; padding-left: 8px; color: #912018; }
-#preflight .check-unknown { border-left: 4px solid #b78224; padding-left: 8px; }
-#preflight p { font-size: 13px; }
-#preflight input:not([type=checkbox]),
-#preflight select {
-  display: block;
-  width: 100%;
-  padding: 9px;
-  border: 1px solid #c5d0df;
-  border-radius: 10px;
-  font: inherit;
-  margin-top: 4px;
-}
 
 @media (max-width: 980px) {
   .dash-bar, .lights-dock, .booth-tools, .layout { margin-right: 16px; padding-right: 16px; }
