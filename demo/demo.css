@@ -154,6 +154,27 @@ body {
   padding: 8px 10px;
   font: inherit;
 }
+.judge-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 12px 22px 0;
+}
+.judge-bar p { margin: 4px 0 0; max-width: 52ch; }
+.judge-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sim-note-line {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff6e8;
+  color: #694011;
+  font-size: 13px;
+  font-weight: 650;
+}
 .sim-row {
   display: flex;
   flex-wrap: wrap;

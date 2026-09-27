@@ -24,7 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hardware_bridge import HardwareBridge
 HARDWARE = HardwareBridge()
 
-# Public demo page may call loopback hardware only (never voice). Host stays 127.0.0.1.
+# Public demo may CORS to loopback hardware/voice. Helper stays on 127.0.0.1 only;
+# authorized() still requires the connection token or the booth bypass checkbox.
 DEMO_ORIGIN_EXACT = {
     'https://printability.tech',
     'https://www.printability.tech',
@@ -126,10 +127,11 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
     def authorized(self, *, allow_demo=False):
+        # Loopback-only: Host must be 127.0.0.1 (never a LAN bind).
         if self.headers.get('Host')!=f'127.0.0.1:{PORT}' or not self.origin_allowed():
             self.reply(403,{'error':'Set the matching extension ID in the Printability helper.'});return False
         if self.is_demo_request() and not allow_demo:
-            self.reply(403,{'error':'The demo page can only drive lights, not Printability Voice.'});return False
+            self.reply(403,{'error':'This helper path is not available to the demo page.'});return False
         auth=self.headers.get('Authorization','')
         with LOCK:
             expected=f"Bearer {CONFIG['token']}"
@@ -165,7 +167,9 @@ class Handler(BaseHTTPRequestHandler):
             except (ValueError,TypeError):self.reply(400,{'error':'Invalid hardware request, or another Printability tab is controlling the lights.'})
             return
         if self.path!='/voice-token':self.reply(404,{'error':'Not found'});return
-        if not self.authorized(allow_demo=False):return
+        # Ephemeral xAI client secret for extension or booth demo (localhost helper only).
+        # Long-lived key never leaves this process. Demo needs booth checkbox or connection code.
+        if not self.authorized(allow_demo=True):return
         if not ANALYSIS_LOCK.acquire(blocking=False):self.reply(429,{'error':'A voice connection is already being created.'});return
         try:self.reply(200,{'session':voice_token()})
         except ValueError as exc:self.reply(400,{'error':str(exc)})
@@ -203,11 +207,11 @@ def run_gui():
     booth_var=tk.BooleanVar(value=bool(CONFIG.get('booth_demo')))
     def toggle_booth():
         with LOCK: CONFIG['booth_demo']=bool(booth_var.get())
-        try:save_config();status.set('Booth demo page allowed. Open printability.tech and use Lights — no token paste needed.' if booth_var.get() else 'Booth demo page blocked. Extension connection unchanged.')
+        try:save_config();status.set('Booth demo page allowed. Open printability.tech on this laptop for lights and live Printability Voice — no token paste needed.' if booth_var.get() else 'Booth demo page blocked. Extension connection unchanged.')
         except Exception:status.set('Booth setting applied for this session only.')
     booth_row=ttk.Frame(frame);booth_row.pack(anchor='w',pady=(10,0),fill='x')
-    ttk.Checkbutton(booth_row,text='Allow booth demo page (printability.tech → local lights)',variable=booth_var,command=toggle_booth).pack(anchor='w')
-    ttk.Label(frame,text='When checked, the public demo may drive USB lights on this PC only. Voice tokens stay extension-only.',wraplength=550).pack(anchor='w',pady=(2,0))
+    ttk.Checkbutton(booth_row,text='Allow booth demo page (printability.tech → local lights & voice)',variable=booth_var,command=toggle_booth).pack(anchor='w')
+    ttk.Label(frame,text='When checked, the public demo on this PC may drive USB lights and request an ephemeral Printability Voice token. Your xAI key never goes to the page or to git.',wraplength=550).pack(anchor='w',pady=(2,0))
     ttk.Label(frame,textvariable=status,wraplength=525).pack(anchor='w',pady=14)
     ttk.Label(frame,text='Hardware uses no paid API. Printability Voice uses your xAI API account while connected.\nStart voice explicitly; Stop disconnects it. No OpenAI calls.',wraplength=550).pack(anchor='w')
     ttk.Separator(frame).pack(fill='x',pady=12)

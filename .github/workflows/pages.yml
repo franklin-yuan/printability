@@ -18,9 +18,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Build static site
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site/demo _site/extension
+          # Root landing page → demo (works on github.io project path and custom domain)
+          cp index.html _site/index.html
+          cp .nojekyll _site/.nojekyll
+          # CNAME stays in the git repo for domain attachment; publishing it in the
+          # Pages artifact makes github.io/printability/ 404 (GitHub custom-domain quirk).
+          # Custom domain is set via the Pages API after deploy.
+          cp demo/index.html demo/demo.css demo/demo.js _site/demo/
+          cp extension/logic.js _site/extension/logic.js
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

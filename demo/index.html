@@ -44,6 +44,21 @@
     </div>
   </div>
 
+  <div class="judge-bar" aria-label="Simulate a print or an error">
+    <div>
+      <span class="lights-label">Simulate for judges</span>
+      <p id="sim-note" class="muted">Acts on the highlighted printer, or Crane if none is selected. The matching light follows.</p>
+    </div>
+    <div class="judge-actions">
+      <button type="button" id="sim-print" class="lights-btn">Start a demo print</button>
+      <button type="button" id="sim-pause" class="lights-btn secondary">Pause it</button>
+      <button type="button" id="sim-error" class="lights-btn secondary">Filament error</button>
+      <button type="button" id="sim-down" class="lights-btn secondary">Printer down</button>
+      <button type="button" id="sim-done" class="lights-btn secondary">Print finished</button>
+      <button type="button" id="sim-ready" class="lights-btn secondary">Back to ready</button>
+    </div>
+  </div>
+
   <main class="layout">
     <section class="farm" aria-label="Printers">
       <div class="farm-top">
@@ -74,8 +89,9 @@
         <div class="controls">
           <button type="button" id="voice-start">Start Printability Voice</button>
           <button type="button" id="voice-stop" class="secondary" disabled>Stop</button>
+          <button type="button" id="voice-talk" class="secondary" disabled hidden>Mute microphone</button>
         </div>
-        <p class="small">Scripted demo — no live voice connection. Pick a suggestion or type a short request.</p>
+        <p id="voice-mode-note" class="small">On the booth laptop with the helper and booth toggle on, this uses live Printability Voice. Elsewhere you get a scripted sample.</p>
         <div class="suggestions" id="suggestions">
           <button type="button" class="chip" data-prompt="I need blue PLA">I need blue PLA</button>
           <button type="button" class="chip" data-prompt="What's free right now?">What's free right now?</button>

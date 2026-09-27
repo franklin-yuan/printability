@@ -6,6 +6,10 @@
   <title>Printability</title>
   <meta http-equiv="refresh" content="0; url=demo/">
   <link rel="canonical" href="https://printability.tech/demo/">
+  <script>
+    // Prefer same-origin demo/ so github.io/printability/ and printability.tech/ both land on the demo.
+    location.replace(new URL('demo/', location.href).href);
+  </script>
 </head>
 <body>
   <p><a href="demo/">Open the Printability demo</a></p>

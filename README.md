@@ -24,17 +24,17 @@ If the custom domain is not live yet, paste these records in the MLH /.tech DNS 
 
 Fallback while DNS propagates: use the `github.io` URL above.
 
-### Booth: demo + real lights
+### Booth: demo + real lights + live voice
 
 1. Plug in the ESP32-S3 USB gateway; power the C3 modules / LED strips.
-2. Double-click `helper/Start Printability.vbs` (keep the helper open).
+2. Double-click `helper/Start Printability.vbs` (keep the helper open). Enter your xAI API key if you want live Printability Voice, then **Save connection**.
 3. In the helper: **Refresh ports** → select the S3 COM port → **Connect**.
-4. Check **Allow booth demo page (printability.tech → local lights)** for a no-token booth setup. (Or leave it unchecked and paste the helper connection code into the demo’s Lights panel once.)
+4. Check **Allow booth demo page (printability.tech → local lights & voice)** for a no-token booth setup. (Or leave it unchecked and paste the helper connection code into the demo’s Lights panel once.)
 5. Open [https://printability.tech](https://printability.tech) (or the `github.io` URL) **on that same laptop**.
 6. Click **Connect lights**. Label table papers **Light 1 · Crane** … **Light 6 · Wren**.
-7. Use scripted Voice, **Show printer** / **Flash**, or the per-card state buttons to change colors. Print stays disabled.
+7. Open **Printability Voice** and click **Start** — with the helper + booth toggle + mic, it connects live. Without the helper (or for visitors elsewhere), chips show a sample and the page says **Live voice offline, showing a sample**. Print stays disabled.
 
-If the helper is closed, the on-screen demo still works and says lights are offline.
+If the helper is closed, the on-screen demo still works and says lights are offline; Voice falls back to the scripted sample.
 
 ## Wireless lights and physical switches
 
