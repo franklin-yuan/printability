@@ -1121,10 +1121,10 @@ registerProcessor('printy-mic',PrintyMic);`;
   function voiceFailText(e) {
     const raw = String(e?.message || e || '');
     if (/failed to fetch|networkerror|load failed/i.test(raw)) {
-      return 'Grok Voice could not reach the helper on this computer. Keep the Printability helper open, allow local network access if Chrome asks, then click Start listening again.';
+      return 'Grok Voice could not reach the helper on this computer. Keep the Printability helper open, allow local network access if Chrome asks, paste its connection code below, then click Start listening again.';
     }
     if (/booth demo is off/i.test(raw)) {
-      return 'Turn on “Allow booth demo page” in the Printability helper, then click Start listening again.';
+      return 'Paste the helper connection code below and click Save, or turn on “Allow booth demo page” in the helper. Then click Start listening again.';
     }
     return raw || 'Grok Voice did not start.';
   }
@@ -1536,12 +1536,28 @@ registerProcessor('printy-mic',PrintyMic);`;
   $('sim-down').onclick = () => simulate('down');
   $('sim-done').onclick = () => simulate('done');
   $('sim-ready').onclick = () => simulate('ready');
-  $('lights-save-token').onclick = () => {
-    setLightToken($('lights-token').value);
+  function rememberConnectionCode(value) {
+    const t = String(value || '').trim();
+    if (!t) return;
+    setLightToken(t);
+    $('voice-token').value = '';
     $('lights-token').value = '';
+    $('voice-token').placeholder = 'Connection code saved for this tab';
+    $('lights-token').placeholder = 'Connection code saved for this tab';
+    setVoiceModeNote('Connection code saved for this tab. Click Start listening.');
+  }
+  $('voice-code-form').onsubmit = (event) => {
+    event.preventDefault();
+    rememberConnectionCode($('voice-token').value);
+  };
+  $('lights-save-token').onclick = () => {
+    rememberConnectionCode($('lights-token').value);
     connectLights(true);
   };
-  if (lightToken()) $('lights-token').placeholder = 'Connection code saved for this tab';
+  if (lightToken()) {
+    $('voice-token').placeholder = 'Connection code saved for this tab';
+    $('lights-token').placeholder = 'Connection code saved for this tab';
+  }
   updateLightsControls();
   setLightsStatus(lightsMessage, '');
 

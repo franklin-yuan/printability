@@ -87,6 +87,13 @@
           <button type="button" id="voice-stop" class="secondary" disabled>Stop</button>
           <button type="button" id="voice-talk" class="secondary" disabled hidden>Mute microphone</button>
         </div>
+        <form id="voice-code-form" class="voice-code">
+          <label for="voice-token">Connection code</label>
+          <div class="voice-code-row">
+            <input id="voice-token" type="password" placeholder="Paste the code from the helper" autocomplete="off">
+            <button type="submit" id="voice-save-token" class="secondary">Save</button>
+          </div>
+        </form>
         <p id="voice-mode-note" class="small">Speak naturally. Printing stays disabled in this demo.</p>
         <details class="try-saying">
           <summary>Ideas to try</summary>

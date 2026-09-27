@@ -840,6 +840,23 @@ body:has(#voice-shell:not([hidden])) .panel { visibility: hidden; }
   font-weight: 650 !important;
 }
 .chip:hover:not(:disabled) { background: #e2eaf2 !important; }
+.voice-code { margin: 0 0 10px; }
+.voice-code label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 750;
+  color: #3d4f63;
+}
+.voice-code-row { display: flex; gap: 8px; }
+.voice-code-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #c5d0df;
+  border-radius: 12px;
+  padding: 11px 12px;
+  font: inherit;
+}
 .prompt-form {
   display: flex;
   gap: 8px;
