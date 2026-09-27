@@ -10,26 +10,6 @@
   <link rel="stylesheet" href="demo.css">
 </head>
 <body>
-  <div class="demo-banner" role="note">
-    Sample printers — no login or Chrome extension needed.
-  </div>
-
-  <section class="start-here" aria-label="Start here">
-    <p class="start-here-cue">Start here</p>
-    <h1>Printability</h1>
-    <p class="start-here-lead">Tell it what you want to print — material, color, or a file name.</p>
-    <div class="hero-voice-wrap">
-      <button type="button" id="hero-voice" class="hero-voice">
-        <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span class="copy">
-          <strong>Ask Printability</strong>
-          <small>One click to start</small>
-        </span>
-      </button>
-      <p class="voice-by">Voice by Grok</p>
-    </div>
-  </section>
-
   <details class="booth-tools">
     <summary>Booth tools <span class="muted">lights &amp; simulate — optional</span></summary>
     <div class="lights-bar" aria-label="Status lights">
@@ -66,17 +46,17 @@
   </details>
 
   <main class="layout">
-    <aside id="printability-panel" class="panel" aria-label="Printability"></aside>
     <section class="farm" aria-label="Printers">
       <div class="farm-top">
         <div>
           <h2>Printers</h2>
-          <p class="muted">Browse the farm — status, wait, material, and file at a glance.</p>
+          <p class="muted">Name, status, wait, material, and your files.</p>
         </div>
       </div>
       <div id="printer-grid" class="printer-grid"></div>
     </section>
   </main>
+  <aside id="printability-panel" class="panel" aria-label="Printability"></aside>
 
   <div id="voice-shell" class="voice-shell" hidden>
     <div class="voice-backdrop" data-close-voice></div>

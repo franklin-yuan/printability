@@ -296,9 +296,7 @@
       }
 
       const heading = el('div', undefined, 'heading');
-      const badge = el('span', info.label, 'status-badge');
-      badge.style.color = TONES[info.kind];
-      badge.style.backgroundColor = TONES[info.kind] + '18';
+      const badge = el('span', info.label, 'status-badge ' + (row.config.broken ? 'broken' : row.state));
       heading.append(el('h3', row.name), badge);
       card.append(heading);
 
@@ -313,10 +311,9 @@
       if (row.simNote) body.append(el('p', row.simNote, 'sim-note-line'));
 
       const facts = el('div', undefined, 'facts');
-      const waitText = wait.minutes === 0 ? 'Available now' : wait.minutes != null ? `~${wait.minutes} min` : info.label;
-      const waitDetail = [wait.note, info.hint].filter(Boolean).find((t) => t && t !== waitText) || '';
+      const waitText = wait.minutes === 0 ? 'Available now' : wait.minutes != null ? `${wait.minutes} min left` : info.label;
       const waitFact = el('div', undefined, 'fact');
-      waitFact.append(el('span', 'Wait', 'fact-label'), el('span', waitDetail ? `${waitText} · ${waitDetail}` : waitText, 'fact-value'));
+      waitFact.append(el('span', 'Wait', 'fact-label'), el('span', waitText, 'fact-value'));
       facts.append(waitFact);
 
       const mat = el('div', undefined, 'slots');
@@ -1426,10 +1423,10 @@ registerProcessor('printy-mic',PrintyMic);`;
   }
 
   /* —— Wire up —— */
-  $('hero-voice').onclick = () => {
+  document.getElementById('hero-voice')?.addEventListener('click', () => {
     openVoice();
     void startVoice();
-  };
+  });
   document.querySelectorAll('[data-close-voice]').forEach((n) => {
     n.addEventListener('click', closeVoice);
   });
