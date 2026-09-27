@@ -149,6 +149,7 @@
     const res = await fetch(`${HELPER}${path}`, {
       ...fetchOpts,
       headers,
+      targetAddressSpace: 'loopback',
       signal: AbortSignal.timeout(timeout || 4000)
     });
     let data = null;
@@ -852,10 +853,14 @@
         talk.disabled = false;
       }
       if (first) {
-        void talkLive().catch(async (err) => {
-          await teardownLive();
-          voiceLive = true;
-          await startSampleVoice(err.message || 'Microphone unavailable');
+        void talkLive().catch((err) => {
+          const talk = $('voice-talk');
+          if (talk) {
+            talk.hidden = false;
+            talk.disabled = false;
+            talk.textContent = 'Start talking';
+          }
+          setVoiceStatus(err.message || 'Allow the microphone, then press Start talking.', true);
         });
       }
     }
@@ -898,6 +903,27 @@
     }
   }
 
+  const MIC_WORKLET_SOURCE = `class PrintyMic extends AudioWorkletProcessor {
+  constructor(){super();this.samples=[];}
+  process(inputs){const data=inputs[0]?.[0];if(data){for(const v of data)this.samples.push(v);if(this.samples.length>=2048){this.port.postMessage(new Float32Array(this.samples));this.samples=[];}}return true;}
+}
+registerProcessor('printy-mic',PrintyMic);`;
+
+  async function loadMicWorklet() {
+    const blobUrl = URL.createObjectURL(new Blob([MIC_WORKLET_SOURCE], { type: 'application/javascript' }));
+    try {
+      await liveCtx.audioWorklet.addModule(blobUrl);
+      return;
+    } catch { /* fall through to the shipped file */ }
+    finally { URL.revokeObjectURL(blobUrl); }
+    const pageUrl = new URL('mic-worklet.js', document.baseURI);
+    try {
+      await liveCtx.audioWorklet.addModule(pageUrl.href);
+      return;
+    } catch { /* extension path, for a local repo server */ }
+    await liveCtx.audioWorklet.addModule(new URL('../extension/mic-worklet.js', document.baseURI).href);
+  }
+
   async function talkLive() {
     if (liveRecording) {
       await releaseLiveMic();
@@ -919,7 +945,7 @@
         return;
       }
       if (!liveLoadedWorklet) {
-        await liveCtx.audioWorklet.addModule('../extension/mic-worklet.js');
+        await loadMicWorklet();
         liveLoadedWorklet = true;
       }
       liveMicSource = liveCtx.createMediaStreamSource(liveMic);
@@ -1001,8 +1027,8 @@
     liveSessionTimer = setTimeout(() => void stopVoice('10-minute session ended. Click Start to continue.'), 600000);
     voiceMode = 'live';
     setVoiceModeNote('Live Printability Voice — speak naturally. Printing stays disabled; a yes to a review opens the card.');
-    $('prompt-send').disabled = true;
-    $('prompt-input').placeholder = 'Mic is live — speak, or Stop and use chips as a sample';
+    $('prompt-send').disabled = false;
+    $('prompt-input').placeholder = 'Speak, or type a request for Printability Voice';
     setVoiceStatus('Connecting to Printability Voice…', false);
   }
 
@@ -1038,8 +1064,7 @@
       await teardownLive();
       liveStarting = false;
       const msg = String(e.message || e);
-      const soft = /Failed to fetch|NetworkError|Load failed|timed out|AbortError|Booth demo is off|xAI API key|microphone|Microphone|No microphone/i.test(msg);
-      await startSampleVoice(soft ? '' : msg);
+      await startSampleVoice(msg);
     }
   }
 
@@ -1082,7 +1107,7 @@
     $('voice-stop').disabled = true;
     $('prompt-send').disabled = true;
     $('prompt-input').placeholder = 'Try: I need blue PLA';
-    setVoiceModeNote('On the booth laptop with the helper and booth toggle on, this uses live Printability Voice. Elsewhere you get a scripted sample.');
+    setVoiceModeNote('Start uses live Printability Voice, the same Grok voice session as the extension, when this computer’s helper allows the booth demo. Printing stays disabled.');
     setVoiceStatus(note, false);
   }
 

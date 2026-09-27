@@ -29,8 +29,9 @@ jobs:
           # CNAME stays in the git repo for domain attachment; publishing it in the
           # Pages artifact makes github.io/printability/ 404 (GitHub custom-domain quirk).
           # Custom domain is set via the Pages API after deploy.
-          cp demo/index.html demo/demo.css demo/demo.js _site/demo/
+          cp demo/index.html demo/demo.css demo/demo.js demo/mic-worklet.js _site/demo/
           cp extension/logic.js _site/extension/logic.js
+          cp extension/mic-worklet.js _site/extension/mic-worklet.js
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site
